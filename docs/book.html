@@ -3,20 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book Details - Home Library</title>
+  <title>Book Details - Buku-Buka</title>
+  <link rel="icon" type="image/png" href="assets/app_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <header>
     <div class="container">
-      <a href="index.html" class="logo">Home Library</a>
+      <a href="index.html" class="logo">
+        <img src="assets/logo_icon.png" alt="Buku-Buka">
+        <span>Buku-Buka</span>
+      </a>
       <nav>
         <a href="index.html">Browse</a>
         <a href="branches.html">Branches</a>
         <span id="nav-auth"></span>
       </nav>
+      <button class="nav-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
     </div>
   </header>
+
+  <div id="mobile-menu" class="mobile-menu" onclick="closeMobileMenu(event)">
+    <div class="mobile-menu-content" onclick="event.stopPropagation()">
+      <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
+      <nav>
+        <a href="index.html">Browse</a>
+        <a href="branches.html">Branches</a>
+        <a href="my-loans.html">My Loans</a>
+        <span id="mobile-nav-auth"></span>
+      </nav>
+    </div>
+  </div>
 
   <main class="container">
     <div id="messages"></div>
@@ -68,14 +92,15 @@
 
       content.innerHTML = `
         <div class="book-detail">
-          <div class="book-detail-cover">
-            ${book.cover_url
-              ? `<img src="${book.cover_url}" alt="${book.title}" onerror="this.style.display='none'">`
-              : ''
-            }
-          </div>
-          <div class="book-detail-info">
-            <h1>${book.title}</h1>
+          <div class="book-detail-grid">
+            <div class="book-detail-cover">
+              ${book.cover_url
+                ? `<img src="${book.cover_url}" alt="${book.title}" onerror="this.style.display='none'">`
+                : ''
+              }
+            </div>
+            <div class="book-detail-info">
+              <h1>${book.title}</h1>
             <div class="book-meta">
               ${book.author ? `<div><strong>Author:</strong> ${book.author}</div>` : ''}
               ${book.publisher ? `<div><strong>Publisher:</strong> ${book.publisher}</div>` : ''}
@@ -84,6 +109,7 @@
               ${book.isbn ? `<div><strong>ISBN:</strong> ${book.isbn}</div>` : ''}
             </div>
             ${book.description ? `<div class="book-description">${book.description}</div>` : ''}
+            </div>
           </div>
         </div>
 
@@ -126,19 +152,35 @@
       window.location.href = `branch-loans.html?checkout=${copyId}`;
     }
 
+    function toggleMobileMenu() {
+      document.getElementById('mobile-menu').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu(event) {
+      if (event && event.target !== event.currentTarget) return;
+      document.getElementById('mobile-menu').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
     function updateNav() {
       const navAuth = document.getElementById('nav-auth');
+      const mobileNavAuth = document.getElementById('mobile-nav-auth');
+
       if (auth.isAuthenticated()) {
         navAuth.innerHTML = `
           <div class="user-menu">
-            ${auth.isBranchOwner() ? '<a href="add-book.html" class="btn btn-primary btn-sm">Add Book</a>' : ''}
             <a href="my-loans.html">My Loans</a>
             <span class="user-name">${auth.user?.name || auth.user?.email}</span>
             <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
           </div>
         `;
+        mobileNavAuth.innerHTML = `
+          <a href="#" onclick="handleSignOut(); return false;">Sign Out</a>
+        `;
       } else {
         navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
+        mobileNavAuth.innerHTML = '<a href="login.html">Sign In</a>';
       }
     }
 
