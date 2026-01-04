@@ -176,11 +176,19 @@
     }
 
     function startScanner() {
-      scanner = new BarcodeScanner('reader', onBarcodeScanned);
-      scanner.start().catch(err => {
-        showMessage(err.message);
-        showManualEntry();
-      });
+      // Only create a new scanner if one doesn't exist
+      if (!scanner) {
+        scanner = new BarcodeScanner('reader', onBarcodeScanned);
+      }
+
+      // Start scanning if not already scanning
+      if (!scanner.isScanning) {
+        scanner.start().catch(err => {
+          showMessage(err.message);
+          showManualEntry();
+        });
+      }
+
       toggleScannerBtn.textContent = 'Stop Scanner';
     }
 
@@ -253,7 +261,9 @@
       notFoundSection.classList.add('hidden');
       previewSection.classList.remove('hidden');
 
-      document.getElementById('preview-cover').src = data.cover_url || '';
+      const previewCover = document.getElementById('preview-cover');
+      previewCover.src = data.cover_url || 'assets/placeholder_book.png';
+      previewCover.onerror = function() { this.src = 'assets/placeholder_book.png'; };
       document.getElementById('preview-title').textContent = data.title;
       document.getElementById('preview-author').textContent = data.author || 'Unknown Author';
       document.getElementById('preview-meta').textContent = [
