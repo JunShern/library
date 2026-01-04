@@ -11,34 +11,6 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header>
-    <div class="container">
-      <a href="index.html" class="logo">
-        <img src="assets/logo_icon.png" alt="Buku-Buka">
-        <span>Buku-Buka</span>
-      </a>
-      <nav>
-        <a href="index.html">Browse</a>
-        <a href="branches.html">Branches</a>
-      </nav>
-      <button class="nav-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </header>
-
-  <div id="mobile-menu" class="mobile-menu" onclick="closeMobileMenu(event)">
-    <div class="mobile-menu-content" onclick="event.stopPropagation()">
-      <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
-      <nav>
-        <a href="index.html">Browse</a>
-        <a href="branches.html">Branches</a>
-      </nav>
-    </div>
-  </div>
-
   <main class="auth-container">
     <div class="auth-card">
       <h1 id="auth-title">Sign In</h1>
@@ -77,18 +49,8 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/components.js"></script>
   <script>
-    function toggleMobileMenu() {
-      document.getElementById('mobile-menu').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeMobileMenu(event) {
-      if (event && event.target !== event.currentTarget) return;
-      document.getElementById('mobile-menu').classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
     let isSignUp = false;
 
     const form = document.getElementById('auth-form');
@@ -133,7 +95,6 @@
           showMessage('Account created! Please check your email to confirm.', 'success');
         } else {
           await auth.signIn(email, password);
-          // Redirect to home or previous page
           const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
           window.location.href = returnUrl;
         }
@@ -142,10 +103,13 @@
       }
     });
 
-    // Redirect if already logged in
-    auth.onAuthChange((user) => {
-      if (user) {
-        window.location.href = 'index.html';
+    // Initialize header and redirect if already logged in
+    initHeader({
+      activePage: 'login',
+      onAuthChange: () => {
+        if (auth.isAuthenticated()) {
+          window.location.href = 'index.html';
+        }
       }
     });
   </script>

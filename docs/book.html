@@ -11,37 +11,6 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header>
-    <div class="container">
-      <a href="index.html" class="logo">
-        <img src="assets/logo_icon.png" alt="Buku-Buka">
-        <span>Buku-Buka</span>
-      </a>
-      <nav>
-        <a href="index.html">Browse</a>
-        <a href="branches.html">Branches</a>
-        <span id="nav-auth"></span>
-      </nav>
-      <button class="nav-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
-        <span></span>
-        <span></span>
-        <span></span>
-      </button>
-    </div>
-  </header>
-
-  <div id="mobile-menu" class="mobile-menu" onclick="closeMobileMenu(event)">
-    <div class="mobile-menu-content" onclick="event.stopPropagation()">
-      <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
-      <nav>
-        <a href="index.html">Browse</a>
-        <a href="branches.html">Branches</a>
-        <a href="my-loans.html">My Loans</a>
-        <span id="mobile-nav-auth"></span>
-      </nav>
-    </div>
-  </div>
-
   <main class="container">
     <div id="messages"></div>
     <div id="book-content">
@@ -56,6 +25,7 @@
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
   <script src="js/api.js"></script>
+  <script src="js/components.js"></script>
   <script>
     const params = new URLSearchParams(window.location.search);
     const bookId = params.get('id');
@@ -78,7 +48,7 @@
 
     function renderBook(book) {
       const content = document.getElementById('book-content');
-      document.title = `${book.title} - Home Library`;
+      document.title = `${book.title} - Buku-Buka`;
 
       const copies = book.copies || [];
       const copyGroups = {};
@@ -148,56 +118,11 @@
     }
 
     function showCheckoutModal(copyId) {
-      // Simple checkout - redirect to branch loans page
       window.location.href = `branch-loans.html?checkout=${copyId}`;
     }
 
-    function toggleMobileMenu() {
-      document.getElementById('mobile-menu').classList.add('open');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeMobileMenu(event) {
-      if (event && event.target !== event.currentTarget) return;
-      document.getElementById('mobile-menu').classList.remove('open');
-      document.body.style.overflow = '';
-    }
-
-    function updateNav() {
-      const navAuth = document.getElementById('nav-auth');
-      const mobileNavAuth = document.getElementById('mobile-nav-auth');
-
-      if (auth.isAuthenticated()) {
-        navAuth.innerHTML = `
-          <div class="user-menu">
-            <a href="my-loans.html">My Loans</a>
-            <span class="user-name">${auth.user?.name || auth.user?.email}</span>
-            <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
-          </div>
-        `;
-        mobileNavAuth.innerHTML = `
-          <a href="#" onclick="handleSignOut(); return false;">Sign Out</a>
-        `;
-      } else {
-        navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
-        mobileNavAuth.innerHTML = '<a href="login.html">Sign In</a>';
-      }
-    }
-
-    async function handleSignOut() {
-      try {
-        await auth.signOut();
-        updateNav();
-        loadBook(); // Reload to update view
-      } catch (err) {
-        showMessage(err.message);
-      }
-    }
-
-    auth.onAuthChange(() => {
-      updateNav();
-      loadBook();
-    });
+    // Initialize
+    initHeader({ onAuthChange: loadBook });
     loadBook();
   </script>
 </body>
