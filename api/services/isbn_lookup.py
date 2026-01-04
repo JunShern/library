@@ -88,13 +88,9 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
 
             volume = data["items"][0]["volumeInfo"]
 
-            # Get the best available cover
-            cover_url = None
-            if "imageLinks" in volume:
-                cover_url = volume["imageLinks"].get("thumbnail") or volume["imageLinks"].get("smallThumbnail")
-                # Upgrade to HTTPS and larger size
-                if cover_url:
-                    cover_url = cover_url.replace("http://", "https://").replace("zoom=1", "zoom=2")
+            # Prefer Open Library cover (more reliable than Google Books)
+            # Open Library often has covers even when they lack metadata
+            cover_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
 
             return {
                 "isbn": isbn,
