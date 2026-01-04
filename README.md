@@ -41,7 +41,7 @@ API runs at http://localhost:8000 (docs at /docs)
 
 ### 3. Frontend Setup
 
-1. Edit `frontend/js/config.js` with your Supabase credentials:
+1. Edit `docs/js/config.js` with your Supabase credentials:
 ```javascript
 const CONFIG = {
   API_URL: 'http://localhost:8000',
@@ -52,7 +52,7 @@ const CONFIG = {
 
 2. Serve the frontend (any static server works):
 ```bash
-cd frontend
+cd docs
 python -m http.server 5500
 # Or use VS Code Live Server, npx serve, etc.
 ```
@@ -73,18 +73,27 @@ Frontend runs at http://localhost:5500
 1. Push your code to GitHub
 2. Go to [railway.app](https://railway.app) and create a new project
 3. Select "Deploy from GitHub repo" → choose your repo
-4. Set the root directory to `api`
-5. Add environment variables in Railway dashboard:
+4. Set the root directory:
+   - Click on the service (purple box)
+   - Go to **Settings** → **Source** → **Root Directory**
+   - Set to `api`
+5. Add environment variables:
+   - Go to **Variables** tab
+   - Add these:
    ```
    SUPABASE_URL=https://your-project-id.supabase.co
    SUPABASE_ANON_KEY=sb_publishable_...
    SUPABASE_SERVICE_KEY=sb_secret_...
    ```
-6. Railway auto-detects Python and deploys. Note your app URL (e.g., `https://library-api.up.railway.app`)
+6. Generate your public URL:
+   - Go to **Settings** → **Networking**
+   - Click **Generate Domain**
+   - When prompted for port, enter `8080`
+   - Note your app URL (e.g., `https://library-api-production.up.railway.app`)
 
 ### Frontend → GitHub Pages
 
-1. Update `frontend/js/config.js` with your production API URL:
+1. Update `docs/js/config.js` with your production API URL:
    ```javascript
    const CONFIG = {
      API_URL: 'https://library-api.up.railway.app',  // Your Railway URL
@@ -94,7 +103,7 @@ Frontend runs at http://localhost:5500
    ```
 
 2. In your GitHub repo, go to **Settings → Pages**
-3. Set source to your branch and folder `/frontend`
+3. Set source to your branch and folder `/docs`
 4. Your site will be live at `https://username.github.io/repo-name/`
 
 ### Update CORS
@@ -122,7 +131,7 @@ library/
 │   ├── routers/         # API endpoints
 │   ├── services/        # ISBN lookup
 │   └── main.py          # App entry
-├── frontend/            # Vanilla HTML/CSS/JS
+├── docs/                # Frontend (Vanilla HTML/CSS/JS)
 │   ├── css/
 │   ├── js/
 │   └── *.html           # Pages
