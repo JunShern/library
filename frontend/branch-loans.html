@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Branch Loans - Home Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="index.html" class="logo">Home Library</a>
+      <nav>
+        <a href="index.html">Browse</a>
+        <a href="branches.html">Branches</a>
+        <span id="nav-auth"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="messages"></div>
+
+    <h1 class="mt-2">Manage Loans</h1>
+
+    <div class="filters mb-2">
+      <select id="branch-filter">
+        <option value="">All My Branches</option>
+      </select>
+      <select id="status-filter">
+        <option value="active">Active</option>
+        <option value="overdue">Overdue</option>
+        <option value="returned">Returned</option>
+        <option value="">All</option>
+      </select>
+    </div>
+
+    <div id="loans-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading loans...</p>
+      </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div id="checkout-modal" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;">
+      <div class="card" style="width: 400px; max-width: 90%;">
+        <div class="card-body">
+          <h3>Check Out Book</h3>
+          <p id="checkout-book-title" class="mb-2"></p>
+
+          <div class="form-group">
+            <label for="borrower-select">Borrower</label>
+            <select id="borrower-select" required></select>
+          </div>
+
+          <div class="form-group">
+            <label for="due-date">Due Date</label>
+            <input type="date" id="due-date" required>
+          </div>
+
+          <div class="form-group">
+            <label for="loan-notes">Notes (optional)</label>
+            <textarea id="loan-notes" rows="2"></textarea>
+          </div>
+
+          <div class="mt-2">
+            <button id="confirm-checkout" class="btn btn-primary">Check Out</button>
+            <button id="cancel-checkout" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    let userBranches = [];
+    let currentCheckoutCopyId = null;
+
+    async function init() {
+      if (!auth.isAuthenticated() || !auth.isBranchOwner()) {
+        window.location.href = 'login.html?return=branch-loans.html';
+        return;
+      }
+
+      await loadBranches();
+      await loadBorrowers();
+      await loadLoans();
+
+      // Check for checkout param
+      const params = new URLSearchParams(window.location.search);
+      const checkoutCopyId = params.get('checkout');
+      if (checkoutCopyId) {
+        showCheckoutModal(checkoutCopyId);
+      }
+    }
+
+    async function loadBranches() {
+      try {
+        const response = await api.getBranches();
+        userBranches = response.branches.filter(b =>
+          b.owner?.id === auth.user?.id || auth.isAdmin()
+        );
+
+        const select = document.getElementById('branch-filter');
+        userBranches.forEach(branch => {
+          const option = document.createElement('option');
+          option.value = branch.id;
+          option.textContent = branch.name;
+          select.appendChild(option);
+        });
+
+        // Set default from URL
+        const params = new URLSearchParams(window.location.search);
+        const branchId = params.get('branch');
+        if (branchId) {
+          select.value = branchId;
+        }
+      } catch (err) {
+        showMessage('Error loading branches: ' + err.message);
+      }
+    }
+
+    async function loadBorrowers() {
+      try {
+        const response = await api.getUsers({ role: 'borrower' });
+        const select = document.getElementById('borrower-select');
+        select.innerHTML = '<option value="">Select borrower...</option>';
+
+        // Include all users who can borrow
+        const allUsers = await api.getUsers();
+        allUsers.users.forEach(user => {
+          const option = document.createElement('option');
+          option.value = user.id;
+          option.textContent = user.name || user.email;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        // Non-admin may not have access, that's OK
+        console.log('Could not load users list');
+      }
+    }
+
+    async function loadLoans() {
+      const content = document.getElementById('loans-content');
+      showLoading(content);
+
+      try {
+        const params = {};
+        const branch = document.getElementById('branch-filter').value;
+        const status = document.getElementById('status-filter').value;
+
+        if (branch) params.branch_id = branch;
+        if (status) params.status = status;
+
+        const response = await api.getLoans(params);
+        renderLoans(response.loans);
+      } catch (err) {
+        content.innerHTML = `<div class="message message-error">${err.message}</div>`;
+      }
+    }
+
+    function renderLoans(loans) {
+      const content = document.getElementById('loans-content');
+
+      if (loans.length === 0) {
+        showEmpty(content, 'No loans found');
+        return;
+      }
+
+      content.innerHTML = `
+        <table class="loans-table">
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Borrower</th>
+              <th>Branch</th>
+              <th>Borrowed</th>
+              <th>Due</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${loans.map(loan => {
+              const book = loan.copy?.book || {};
+              const branch = loan.copy?.branch || {};
+              const borrower = loan.borrower || {};
+              const overdue = !loan.returned_at && isOverdue(loan.due_date);
+
+              return `
+                <tr>
+                  <td>
+                    <a href="book.html?id=${book.id}">${book.title || 'Unknown'}</a>
+                  </td>
+                  <td>${borrower.name || 'Unknown'}</td>
+                  <td>${branch.name || 'Unknown'}</td>
+                  <td>${formatDate(loan.borrowed_at)}</td>
+                  <td class="${overdue ? 'overdue' : ''}">
+                    ${formatDate(loan.due_date)}
+                    ${overdue ? ' (Overdue)' : ''}
+                  </td>
+                  <td>
+                    ${loan.returned_at
+                      ? `<span class="text-muted">Returned ${formatDate(loan.returned_at)}</span>`
+                      : `<button class="btn btn-success btn-sm" onclick="returnLoan('${loan.id}')">Return</button>`
+                    }
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    async function showCheckoutModal(copyId) {
+      currentCheckoutCopyId = copyId;
+
+      try {
+        const copy = await api.getCopy(copyId);
+        document.getElementById('checkout-book-title').textContent =
+          `${copy.book?.title || 'Unknown'} at ${copy.branch?.name || 'Unknown'}`;
+
+        // Set default due date
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + CONFIG.DEFAULT_LOAN_DAYS);
+        document.getElementById('due-date').value = dueDate.toISOString().split('T')[0];
+
+        document.getElementById('checkout-modal').classList.remove('hidden');
+        document.getElementById('checkout-modal').style.display = 'flex';
+      } catch (err) {
+        showMessage('Error loading copy: ' + err.message);
+      }
+    }
+
+    function hideCheckoutModal() {
+      document.getElementById('checkout-modal').classList.add('hidden');
+      document.getElementById('checkout-modal').style.display = 'none';
+      currentCheckoutCopyId = null;
+
+      // Clear URL param
+      const url = new URL(window.location);
+      url.searchParams.delete('checkout');
+      window.history.replaceState({}, '', url);
+    }
+
+    document.getElementById('cancel-checkout').addEventListener('click', hideCheckoutModal);
+
+    document.getElementById('confirm-checkout').addEventListener('click', async () => {
+      const borrowerId = document.getElementById('borrower-select').value;
+      const dueDate = document.getElementById('due-date').value;
+      const notes = document.getElementById('loan-notes').value;
+
+      if (!borrowerId) {
+        showMessage('Please select a borrower');
+        return;
+      }
+
+      if (!dueDate) {
+        showMessage('Please set a due date');
+        return;
+      }
+
+      try {
+        await api.createLoan({
+          copy_id: currentCheckoutCopyId,
+          borrower_id: borrowerId,
+          due_date: dueDate,
+          notes: notes || null,
+        });
+
+        showMessage('Book checked out successfully!', 'success');
+        hideCheckoutModal();
+        loadLoans();
+      } catch (err) {
+        showMessage('Error checking out: ' + err.message);
+      }
+    });
+
+    async function returnLoan(loanId) {
+      if (!confirm('Mark this book as returned?')) return;
+
+      try {
+        await api.returnLoan(loanId);
+        showMessage('Book returned successfully!', 'success');
+        loadLoans();
+      } catch (err) {
+        showMessage('Error returning book: ' + err.message);
+      }
+    }
+
+    function updateNav() {
+      const navAuth = document.getElementById('nav-auth');
+      if (auth.isAuthenticated()) {
+        navAuth.innerHTML = `
+          <div class="user-menu">
+            ${auth.isBranchOwner() ? '<a href="add-book.html" class="btn btn-primary btn-sm">Add Book</a>' : ''}
+            <a href="my-loans.html">My Loans</a>
+            <span class="user-name">${auth.user?.name || auth.user?.email}</span>
+            <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
+          </div>
+        `;
+      } else {
+        navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
+      }
+    }
+
+    async function handleSignOut() {
+      await auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('branch-filter').addEventListener('change', loadLoans);
+    document.getElementById('status-filter').addEventListener('change', loadLoans);
+
+    auth.onAuthChange(() => {
+      updateNav();
+      if (auth.isAuthenticated() && auth.isBranchOwner()) {
+        init();
+      }
+    });
+  </script>
+</body>
+</html>

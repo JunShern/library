@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In - Home Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="index.html" class="logo">Home Library</a>
+      <nav>
+        <a href="index.html">Browse</a>
+        <a href="branches.html">Branches</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="auth-container">
+    <div class="auth-card">
+      <h1 id="auth-title">Sign In</h1>
+
+      <div id="messages"></div>
+
+      <form id="auth-form">
+        <div class="form-group hidden" id="name-group">
+          <label for="name">Name</label>
+          <input type="text" id="name" name="name" placeholder="Your name">
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" required placeholder="your@email.com">
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required minlength="6" placeholder="Min 6 characters">
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%">
+          <span id="submit-text">Sign In</span>
+        </button>
+      </form>
+
+      <div class="auth-toggle">
+        <span id="toggle-text">Don't have an account?</span>
+        <a href="#" id="toggle-link">Sign Up</a>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    let isSignUp = false;
+
+    const form = document.getElementById('auth-form');
+    const nameGroup = document.getElementById('name-group');
+    const title = document.getElementById('auth-title');
+    const submitText = document.getElementById('submit-text');
+    const toggleText = document.getElementById('toggle-text');
+    const toggleLink = document.getElementById('toggle-link');
+
+    function updateMode() {
+      if (isSignUp) {
+        nameGroup.classList.remove('hidden');
+        title.textContent = 'Sign Up';
+        submitText.textContent = 'Create Account';
+        toggleText.textContent = 'Already have an account?';
+        toggleLink.textContent = 'Sign In';
+      } else {
+        nameGroup.classList.add('hidden');
+        title.textContent = 'Sign In';
+        submitText.textContent = 'Sign In';
+        toggleText.textContent = "Don't have an account?";
+        toggleLink.textContent = 'Sign Up';
+      }
+    }
+
+    toggleLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      isSignUp = !isSignUp;
+      updateMode();
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const name = document.getElementById('name').value;
+
+      try {
+        if (isSignUp) {
+          await auth.signUp(email, password, name || email.split('@')[0]);
+          showMessage('Account created! Please check your email to confirm.', 'success');
+        } else {
+          await auth.signIn(email, password);
+          // Redirect to home or previous page
+          const returnUrl = new URLSearchParams(window.location.search).get('return') || 'index.html';
+          window.location.href = returnUrl;
+        }
+      } catch (err) {
+        showMessage(err.message);
+      }
+    });
+
+    // Redirect if already logged in
+    auth.onAuthChange((user) => {
+      if (user) {
+        window.location.href = 'index.html';
+      }
+    });
+  </script>
+</body>
+</html>

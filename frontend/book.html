@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Book Details - Home Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="index.html" class="logo">Home Library</a>
+      <nav>
+        <a href="index.html">Browse</a>
+        <a href="branches.html">Branches</a>
+        <span id="nav-auth"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="messages"></div>
+    <div id="book-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading book details...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const bookId = params.get('id');
+
+    async function loadBook() {
+      const content = document.getElementById('book-content');
+
+      if (!bookId) {
+        content.innerHTML = '<div class="message message-error">No book ID provided</div>';
+        return;
+      }
+
+      try {
+        const book = await api.getBook(bookId);
+        renderBook(book);
+      } catch (err) {
+        content.innerHTML = `<div class="message message-error">${err.message}</div>`;
+      }
+    }
+
+    function renderBook(book) {
+      const content = document.getElementById('book-content');
+      document.title = `${book.title} - Home Library`;
+
+      const copies = book.copies || [];
+      const copyGroups = {};
+      copies.forEach(copy => {
+        const branchName = copy.branch?.name || 'Unknown Branch';
+        if (!copyGroups[branchName]) {
+          copyGroups[branchName] = [];
+        }
+        copyGroups[branchName].push(copy);
+      });
+
+      content.innerHTML = `
+        <div class="book-detail">
+          <div class="book-detail-cover">
+            ${book.cover_url
+              ? `<img src="${book.cover_url}" alt="${book.title}" onerror="this.style.display='none'">`
+              : ''
+            }
+          </div>
+          <div class="book-detail-info">
+            <h1>${book.title}</h1>
+            <div class="book-meta">
+              ${book.author ? `<div><strong>Author:</strong> ${book.author}</div>` : ''}
+              ${book.publisher ? `<div><strong>Publisher:</strong> ${book.publisher}</div>` : ''}
+              ${book.publish_year ? `<div><strong>Year:</strong> ${book.publish_year}</div>` : ''}
+              ${book.page_count ? `<div><strong>Pages:</strong> ${book.page_count}</div>` : ''}
+              ${book.isbn ? `<div><strong>ISBN:</strong> ${book.isbn}</div>` : ''}
+            </div>
+            ${book.description ? `<div class="book-description">${book.description}</div>` : ''}
+          </div>
+        </div>
+
+        <div class="copies-list">
+          <h2>Copies (${copies.length})</h2>
+          ${Object.entries(copyGroups).map(([branchName, branchCopies]) => `
+            <div class="mb-2">
+              <h3><span class="badge badge-branch">${branchName}</span></h3>
+              ${branchCopies.map(copy => `
+                <div class="copy-item">
+                  <div class="copy-info">
+                    <span class="badge ${copy.is_available ? 'badge-available' : 'badge-unavailable'}">
+                      ${copy.is_available ? 'Available' : 'On Loan'}
+                    </span>
+                    ${copy.condition ? `<span>Condition: ${copy.condition}</span>` : ''}
+                    ${copy.notes ? `<span class="text-muted">${copy.notes}</span>` : ''}
+                  </div>
+                  ${!copy.is_available && copy.current_loan ? `
+                    <div class="text-muted">
+                      Due: ${formatDate(copy.current_loan.due_date)}
+                      ${isOverdue(copy.current_loan.due_date) ? '<span class="overdue">(Overdue)</span>' : ''}
+                    </div>
+                  ` : ''}
+                  ${auth.isBranchOwner() && copy.is_available ? `
+                    <button class="btn btn-primary btn-sm" onclick="showCheckoutModal('${copy.id}')">
+                      Check Out
+                    </button>
+                  ` : ''}
+                </div>
+              `).join('')}
+            </div>
+          `).join('')}
+          ${copies.length === 0 ? '<p class="text-muted">No copies available</p>' : ''}
+        </div>
+      `;
+    }
+
+    function showCheckoutModal(copyId) {
+      // Simple checkout - redirect to branch loans page
+      window.location.href = `branch-loans.html?checkout=${copyId}`;
+    }
+
+    function updateNav() {
+      const navAuth = document.getElementById('nav-auth');
+      if (auth.isAuthenticated()) {
+        navAuth.innerHTML = `
+          <div class="user-menu">
+            ${auth.isBranchOwner() ? '<a href="add-book.html" class="btn btn-primary btn-sm">Add Book</a>' : ''}
+            <a href="my-loans.html">My Loans</a>
+            <span class="user-name">${auth.user?.name || auth.user?.email}</span>
+            <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
+          </div>
+        `;
+      } else {
+        navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
+      }
+    }
+
+    async function handleSignOut() {
+      try {
+        await auth.signOut();
+        updateNav();
+        loadBook(); // Reload to update view
+      } catch (err) {
+        showMessage(err.message);
+      }
+    }
+
+    auth.onAuthChange(() => {
+      updateNav();
+      loadBook();
+    });
+    loadBook();
+  </script>
+</body>
+</html>

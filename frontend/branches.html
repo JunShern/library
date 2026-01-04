@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Branches - Home Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="index.html" class="logo">Home Library</a>
+      <nav>
+        <a href="index.html">Browse</a>
+        <a href="branches.html">Branches</a>
+        <span id="nav-auth"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="messages"></div>
+
+    <h1 class="mt-2">Library Branches</h1>
+    <p class="text-muted mb-2">Physical locations where books are available</p>
+
+    <div id="branch-grid" class="branch-grid">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading branches...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    async function loadBranches() {
+      const grid = document.getElementById('branch-grid');
+
+      try {
+        const response = await api.getBranches();
+        renderBranches(response.branches);
+      } catch (err) {
+        grid.innerHTML = `<div class="message message-error">${err.message}</div>`;
+      }
+    }
+
+    function renderBranches(branches) {
+      const grid = document.getElementById('branch-grid');
+
+      if (branches.length === 0) {
+        showEmpty(grid, 'No branches yet');
+        return;
+      }
+
+      grid.innerHTML = branches.map(branch => `
+        <div class="branch-card">
+          <h3>${branch.name}</h3>
+          ${branch.address ? `<p class="text-muted">${branch.address}</p>` : ''}
+          <p>Owner: ${branch.owner?.name || 'Unknown'}</p>
+          <div class="branch-stats">
+            <span>${branch.copy_count} books</span>
+          </div>
+          <div class="mt-2">
+            <a href="index.html?branch=${branch.id}" class="btn btn-secondary btn-sm">
+              Browse Books
+            </a>
+            ${auth.isBranchOwner() && auth.user?.id === branch.owner?.id ? `
+              <a href="branch-loans.html?branch=${branch.id}" class="btn btn-primary btn-sm">
+                Manage Loans
+              </a>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateNav() {
+      const navAuth = document.getElementById('nav-auth');
+      if (auth.isAuthenticated()) {
+        navAuth.innerHTML = `
+          <div class="user-menu">
+            ${auth.isBranchOwner() ? '<a href="add-book.html" class="btn btn-primary btn-sm">Add Book</a>' : ''}
+            <a href="my-loans.html">My Loans</a>
+            <span class="user-name">${auth.user?.name || auth.user?.email}</span>
+            <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
+          </div>
+        `;
+      } else {
+        navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
+      }
+    }
+
+    async function handleSignOut() {
+      try {
+        await auth.signOut();
+        updateNav();
+        loadBranches();
+      } catch (err) {
+        showMessage(err.message);
+      }
+    }
+
+    auth.onAuthChange(() => {
+      updateNav();
+      loadBranches();
+    });
+    loadBranches();
+  </script>
+</body>
+</html>

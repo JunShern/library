@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Book - Home Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="index.html" class="logo">Home Library</a>
+      <nav>
+        <a href="index.html">Browse</a>
+        <a href="branches.html">Branches</a>
+        <span id="nav-auth"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="messages"></div>
+
+    <div class="scanner-container">
+      <h1>Add a Book</h1>
+      <p class="text-muted mb-2">Scan a barcode or enter ISBN manually</p>
+
+      <!-- Scanner -->
+      <div id="scanner-section">
+        <div id="reader"></div>
+        <div class="mt-2 text-center">
+          <button id="toggle-scanner" class="btn btn-secondary">Stop Scanner</button>
+          <button id="manual-entry-btn" class="btn btn-secondary">Enter ISBN Manually</button>
+        </div>
+      </div>
+
+      <!-- Manual ISBN Entry -->
+      <div id="manual-section" class="hidden">
+        <div class="form-group">
+          <label for="manual-isbn">ISBN</label>
+          <input type="text" id="manual-isbn" placeholder="Enter ISBN (e.g., 9780141036144)">
+        </div>
+        <button id="lookup-btn" class="btn btn-primary">Look Up</button>
+        <button id="back-to-scanner" class="btn btn-secondary">Back to Scanner</button>
+      </div>
+
+      <!-- Preview -->
+      <div id="preview-section" class="hidden scan-result">
+        <h3>Book Found</h3>
+        <div class="scan-result-preview">
+          <div class="scan-result-cover">
+            <img id="preview-cover" src="" alt="">
+          </div>
+          <div>
+            <h4 id="preview-title"></h4>
+            <p id="preview-author" class="text-muted"></p>
+            <p id="preview-meta" class="text-muted"></p>
+          </div>
+        </div>
+
+        <div class="form-group mt-2">
+          <label for="branch-select">Add to Branch</label>
+          <select id="branch-select" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="condition-select">Condition</label>
+          <select id="condition-select">
+            <option value="">Not specified</option>
+            <option value="excellent">Excellent</option>
+            <option value="good">Good</option>
+            <option value="fair">Fair</option>
+            <option value="poor">Poor</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="notes-input">Notes (optional)</label>
+          <textarea id="notes-input" rows="2" placeholder="e.g., Signed by author, missing dust jacket"></textarea>
+        </div>
+
+        <div class="mt-2">
+          <button id="save-btn" class="btn btn-primary btn-lg">Add to Library</button>
+          <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+
+      <!-- Not Found -->
+      <div id="not-found-section" class="hidden scan-result">
+        <h3>Book Not Found</h3>
+        <p>We couldn't find metadata for this ISBN. You can enter the details manually.</p>
+
+        <div class="form-group">
+          <label for="manual-title">Title *</label>
+          <input type="text" id="manual-title" required>
+        </div>
+
+        <div class="form-group">
+          <label for="manual-author">Author</label>
+          <input type="text" id="manual-author">
+        </div>
+
+        <div class="form-group">
+          <label for="manual-branch">Add to Branch</label>
+          <select id="manual-branch" required></select>
+        </div>
+
+        <div class="form-group">
+          <label for="manual-condition">Condition</label>
+          <select id="manual-condition">
+            <option value="">Not specified</option>
+            <option value="excellent">Excellent</option>
+            <option value="good">Good</option>
+            <option value="fair">Fair</option>
+            <option value="poor">Poor</option>
+          </select>
+        </div>
+
+        <div class="mt-2">
+          <button id="save-manual-btn" class="btn btn-primary btn-lg">Add to Library</button>
+          <button id="cancel-manual-btn" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/scanner.js"></script>
+  <script>
+    let scanner = null;
+    let currentISBN = null;
+    let currentBookData = null;
+    let userBranches = [];
+
+    // DOM elements
+    const scannerSection = document.getElementById('scanner-section');
+    const manualSection = document.getElementById('manual-section');
+    const previewSection = document.getElementById('preview-section');
+    const notFoundSection = document.getElementById('not-found-section');
+    const toggleScannerBtn = document.getElementById('toggle-scanner');
+
+    async function init() {
+      // Check auth
+      if (!auth.isAuthenticated()) {
+        window.location.href = 'login.html?return=add-book.html';
+        return;
+      }
+
+      if (!auth.isBranchOwner()) {
+        showMessage('You need branch owner permissions to add books');
+        return;
+      }
+
+      // Load user's branches
+      await loadBranches();
+
+      // Start scanner
+      startScanner();
+    }
+
+    async function loadBranches() {
+      try {
+        const response = await api.getBranches();
+        // Filter to branches user owns
+        userBranches = response.branches.filter(b =>
+          b.owner?.id === auth.user?.id || auth.isAdmin()
+        );
+
+        if (userBranches.length === 0) {
+          showMessage('You don\'t own any branches. Contact an admin.');
+          return;
+        }
+
+        // Populate selects
+        const selects = ['branch-select', 'manual-branch'];
+        selects.forEach(id => {
+          const select = document.getElementById(id);
+          select.innerHTML = userBranches.map(b =>
+            `<option value="${b.id}">${b.name}</option>`
+          ).join('');
+        });
+      } catch (err) {
+        showMessage('Error loading branches: ' + err.message);
+      }
+    }
+
+    function startScanner() {
+      scanner = new BarcodeScanner('reader', onBarcodeScanned);
+      scanner.start().catch(err => {
+        showMessage(err.message);
+        // Show manual entry as fallback
+        showManualEntry();
+      });
+      toggleScannerBtn.textContent = 'Stop Scanner';
+    }
+
+    function stopScanner() {
+      if (scanner) {
+        scanner.stop();
+      }
+      toggleScannerBtn.textContent = 'Start Scanner';
+    }
+
+    toggleScannerBtn.addEventListener('click', () => {
+      if (scanner?.isScanning) {
+        stopScanner();
+      } else {
+        startScanner();
+      }
+    });
+
+    document.getElementById('manual-entry-btn').addEventListener('click', showManualEntry);
+    document.getElementById('back-to-scanner').addEventListener('click', showScanner);
+
+    function showManualEntry() {
+      stopScanner();
+      scannerSection.classList.add('hidden');
+      manualSection.classList.remove('hidden');
+      previewSection.classList.add('hidden');
+      notFoundSection.classList.add('hidden');
+    }
+
+    function showScanner() {
+      manualSection.classList.add('hidden');
+      previewSection.classList.add('hidden');
+      notFoundSection.classList.add('hidden');
+      scannerSection.classList.remove('hidden');
+      startScanner();
+    }
+
+    async function onBarcodeScanned(isbn) {
+      currentISBN = scanner.normalizeISBN(isbn);
+      await lookupISBN(currentISBN);
+    }
+
+    document.getElementById('lookup-btn').addEventListener('click', async () => {
+      const isbn = document.getElementById('manual-isbn').value.trim();
+      if (!isbn) {
+        showMessage('Please enter an ISBN');
+        return;
+      }
+      currentISBN = isbn.replace(/[-\s]/g, '');
+      await lookupISBN(currentISBN);
+    });
+
+    async function lookupISBN(isbn) {
+      try {
+        const data = await api.lookupISBN(isbn);
+        currentBookData = data;
+        showPreview(data);
+      } catch (err) {
+        if (err.message.includes('404') || err.message.includes('not found')) {
+          showNotFound(isbn);
+        } else {
+          showMessage('Error looking up ISBN: ' + err.message);
+        }
+      }
+    }
+
+    function showPreview(data) {
+      scannerSection.classList.add('hidden');
+      manualSection.classList.add('hidden');
+      notFoundSection.classList.add('hidden');
+      previewSection.classList.remove('hidden');
+
+      document.getElementById('preview-cover').src = data.cover_url || '';
+      document.getElementById('preview-title').textContent = data.title;
+      document.getElementById('preview-author').textContent = data.author || 'Unknown Author';
+      document.getElementById('preview-meta').textContent = [
+        data.publisher,
+        data.publish_year,
+        data.page_count ? `${data.page_count} pages` : null
+      ].filter(Boolean).join(' | ');
+    }
+
+    function showNotFound(isbn) {
+      scannerSection.classList.add('hidden');
+      manualSection.classList.add('hidden');
+      previewSection.classList.add('hidden');
+      notFoundSection.classList.remove('hidden');
+    }
+
+    document.getElementById('cancel-btn').addEventListener('click', showScanner);
+    document.getElementById('cancel-manual-btn').addEventListener('click', showScanner);
+
+    document.getElementById('save-btn').addEventListener('click', async () => {
+      const branchId = document.getElementById('branch-select').value;
+      const condition = document.getElementById('condition-select').value;
+      const notes = document.getElementById('notes-input').value;
+
+      try {
+        await api.createCopy({
+          isbn: currentISBN,
+          branch_id: branchId,
+          condition: condition || null,
+          notes: notes || null,
+        });
+
+        showMessage('Book added successfully!', 'success');
+        setTimeout(() => {
+          currentISBN = null;
+          currentBookData = null;
+          document.getElementById('condition-select').value = '';
+          document.getElementById('notes-input').value = '';
+          showScanner();
+        }, 1500);
+      } catch (err) {
+        showMessage('Error adding book: ' + err.message);
+      }
+    });
+
+    document.getElementById('save-manual-btn').addEventListener('click', async () => {
+      const title = document.getElementById('manual-title').value.trim();
+      const author = document.getElementById('manual-author').value.trim();
+      const branchId = document.getElementById('manual-branch').value;
+      const condition = document.getElementById('manual-condition').value;
+
+      if (!title) {
+        showMessage('Title is required');
+        return;
+      }
+
+      try {
+        // Create book first
+        const book = await api.createBook({
+          isbn: currentISBN || null,
+          title,
+          author: author || null,
+        });
+
+        // Then create copy
+        await api.createCopy({
+          book_id: book.id,
+          branch_id: branchId,
+          condition: condition || null,
+        });
+
+        showMessage('Book added successfully!', 'success');
+        setTimeout(() => {
+          currentISBN = null;
+          document.getElementById('manual-title').value = '';
+          document.getElementById('manual-author').value = '';
+          showScanner();
+        }, 1500);
+      } catch (err) {
+        showMessage('Error adding book: ' + err.message);
+      }
+    });
+
+    function updateNav() {
+      const navAuth = document.getElementById('nav-auth');
+      if (auth.isAuthenticated()) {
+        navAuth.innerHTML = `
+          <div class="user-menu">
+            <a href="my-loans.html">My Loans</a>
+            <span class="user-name">${auth.user?.name || auth.user?.email}</span>
+            <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
+          </div>
+        `;
+      } else {
+        navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
+      }
+    }
+
+    async function handleSignOut() {
+      await auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    auth.onAuthChange((user) => {
+      updateNav();
+      if (user && auth.isBranchOwner()) {
+        init();
+      }
+    });
+  </script>
+</body>
+</html>

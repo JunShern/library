@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="index.html" class="logo">Home Library</a>
+      <nav>
+        <a href="index.html">Browse</a>
+        <a href="branches.html">Branches</a>
+        <span id="nav-auth"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="messages"></div>
+
+    <div class="search-bar">
+      <input
+        type="text"
+        id="search-input"
+        class="search-input"
+        placeholder="Search by title or author..."
+      >
+      <div class="filters">
+        <select id="branch-filter">
+          <option value="">All Branches</option>
+        </select>
+        <select id="availability-filter">
+          <option value="">All</option>
+          <option value="true">Available</option>
+          <option value="false">On Loan</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="book-grid" class="book-grid">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading books...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    let allBooks = [];
+    let branches = [];
+
+    async function loadBranches() {
+      try {
+        const response = await api.getBranches();
+        branches = response.branches;
+        const select = document.getElementById('branch-filter');
+        branches.forEach(branch => {
+          const option = document.createElement('option');
+          option.value = branch.id;
+          option.textContent = branch.name;
+          select.appendChild(option);
+        });
+      } catch (err) {
+        console.error('Error loading branches:', err);
+      }
+    }
+
+    async function loadBooks() {
+      const grid = document.getElementById('book-grid');
+      showLoading(grid);
+
+      try {
+        const params = {};
+        const search = document.getElementById('search-input').value;
+        const branch = document.getElementById('branch-filter').value;
+        const available = document.getElementById('availability-filter').value;
+
+        if (search) params.q = search;
+        if (branch) params.branch = branch;
+        if (available) params.available = available;
+
+        const response = await api.getBooks(params);
+        allBooks = response.books;
+        renderBooks(allBooks);
+      } catch (err) {
+        grid.innerHTML = `<div class="message message-error">${err.message}</div>`;
+      }
+    }
+
+    function renderBooks(books) {
+      const grid = document.getElementById('book-grid');
+
+      if (books.length === 0) {
+        showEmpty(grid, 'No books found');
+        return;
+      }
+
+      grid.innerHTML = books.map(book => {
+        const copies = book.copies || [];
+        const availableCopies = copies.filter(c =>
+          !c.loans?.some(l => !l.returned_at)
+        ).length;
+        const isAvailable = availableCopies > 0;
+
+        return `
+          <a href="book.html?id=${book.id}" class="book-card">
+            <div class="book-cover">
+              ${book.cover_url
+                ? `<img src="${book.cover_url}" alt="${book.title}" onerror="this.parentElement.innerHTML='<span class=no-cover>No Cover</span>'">`
+                : '<span class="no-cover">No Cover</span>'
+              }
+            </div>
+            <div class="book-info">
+              <div class="book-title">${book.title}</div>
+              <div class="book-author">${book.author || 'Unknown Author'}</div>
+              <span class="badge ${isAvailable ? 'badge-available' : 'badge-unavailable'}">
+                ${isAvailable ? `${availableCopies} available` : 'On loan'}
+              </span>
+            </div>
+          </a>
+        `;
+      }).join('');
+    }
+
+    function updateNav() {
+      const navAuth = document.getElementById('nav-auth');
+      if (auth.isAuthenticated()) {
+        navAuth.innerHTML = `
+          <div class="user-menu">
+            ${auth.isBranchOwner() ? '<a href="add-book.html" class="btn btn-primary btn-sm">Add Book</a>' : ''}
+            <a href="my-loans.html">My Loans</a>
+            <span class="user-name">${auth.user?.name || auth.user?.email}</span>
+            <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
+          </div>
+        `;
+      } else {
+        navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
+      }
+    }
+
+    async function handleSignOut() {
+      try {
+        await auth.signOut();
+        updateNav();
+      } catch (err) {
+        showMessage(err.message);
+      }
+    }
+
+    // Debounce search
+    let searchTimeout;
+    document.getElementById('search-input').addEventListener('input', () => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(loadBooks, 300);
+    });
+
+    document.getElementById('branch-filter').addEventListener('change', loadBooks);
+    document.getElementById('availability-filter').addEventListener('change', loadBooks);
+
+    // Initialize
+    auth.onAuthChange(updateNav);
+    loadBranches();
+    loadBooks();
+  </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Loans - Home Library</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <div class="container">
+      <a href="index.html" class="logo">Home Library</a>
+      <nav>
+        <a href="index.html">Browse</a>
+        <a href="branches.html">Branches</a>
+        <span id="nav-auth"></span>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="messages"></div>
+
+    <h1 class="mt-2">My Loans</h1>
+
+    <div class="filters mb-2">
+      <select id="status-filter">
+        <option value="active">Current Loans</option>
+        <option value="returned">History</option>
+        <option value="">All</option>
+      </select>
+    </div>
+
+    <div id="loans-content">
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading loans...</p>
+      </div>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/api.js"></script>
+  <script>
+    async function loadLoans() {
+      const content = document.getElementById('loans-content');
+
+      if (!auth.isAuthenticated()) {
+        content.innerHTML = `
+          <div class="empty-state">
+            <h3>Sign in to view your loans</h3>
+            <a href="login.html?return=my-loans.html" class="btn btn-primary mt-2">Sign In</a>
+          </div>
+        `;
+        return;
+      }
+
+      showLoading(content);
+
+      try {
+        const status = document.getElementById('status-filter').value;
+        const params = {};
+        if (status) params.status = status;
+
+        const response = await api.getLoans(params);
+        renderLoans(response.loans);
+      } catch (err) {
+        content.innerHTML = `<div class="message message-error">${err.message}</div>`;
+      }
+    }
+
+    function renderLoans(loans) {
+      const content = document.getElementById('loans-content');
+
+      if (loans.length === 0) {
+        showEmpty(content, 'No loans found');
+        return;
+      }
+
+      content.innerHTML = `
+        <table class="loans-table">
+          <thead>
+            <tr>
+              <th>Book</th>
+              <th>Branch</th>
+              <th>Borrowed</th>
+              <th>Due Date</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${loans.map(loan => {
+              const book = loan.copy?.book || {};
+              const branch = loan.copy?.branch || {};
+              const overdue = !loan.returned_at && isOverdue(loan.due_date);
+
+              return `
+                <tr>
+                  <td>
+                    <a href="book.html?id=${book.id}">${book.title || 'Unknown'}</a>
+                    <div class="text-muted">${book.author || ''}</div>
+                  </td>
+                  <td>${branch.name || 'Unknown'}</td>
+                  <td>${formatDate(loan.borrowed_at)}</td>
+                  <td class="${overdue ? 'overdue' : ''}">${formatDate(loan.due_date)}</td>
+                  <td>
+                    ${loan.returned_at
+                      ? `<span class="badge badge-available">Returned ${formatDate(loan.returned_at)}</span>`
+                      : overdue
+                        ? '<span class="badge badge-unavailable">Overdue</span>'
+                        : '<span class="badge badge-branch">On Loan</span>'
+                    }
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function updateNav() {
+      const navAuth = document.getElementById('nav-auth');
+      if (auth.isAuthenticated()) {
+        navAuth.innerHTML = `
+          <div class="user-menu">
+            ${auth.isBranchOwner() ? '<a href="add-book.html" class="btn btn-primary btn-sm">Add Book</a>' : ''}
+            <a href="my-loans.html">My Loans</a>
+            <span class="user-name">${auth.user?.name || auth.user?.email}</span>
+            <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
+          </div>
+        `;
+      } else {
+        navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
+      }
+    }
+
+    async function handleSignOut() {
+      await auth.signOut();
+      window.location.href = 'index.html';
+    }
+
+    document.getElementById('status-filter').addEventListener('change', loadLoans);
+
+    auth.onAuthChange(() => {
+      updateNav();
+      loadLoans();
+    });
+  </script>
+</body>
+</html>
