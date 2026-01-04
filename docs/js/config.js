@@ -1,7 +1,7 @@
 // Configuration - update these values for your environment
 const CONFIG = {
   // API URL - update when deploying
-  API_URL: 'https://library-production-3c4e.up.railway.app',
+  API_URL: 'https://library-production-6285.up.railway.app',
 
   // Supabase credentials - get from your Supabase project
   SUPABASE_URL: 'https://idjloeyjwjeqcqinowph.supabase.co',
