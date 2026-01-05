@@ -114,10 +114,9 @@
         return `
           <a href="book.html?id=${book.id}" class="book-card">
             <div class="book-cover">
-              ${book.cover_url
-                ? `<img src="${book.cover_url}" alt="${book.title}" onerror="this.parentElement.innerHTML='<span class=no-cover>No Cover</span>'">`
-                : '<span class="no-cover">No Cover</span>'
-              }
+              <img src="${book.cover_url || 'assets/placeholder_book.png'}"
+                   alt="${book.title}"
+                   onerror="this.src='assets/placeholder_book.png'">
             </div>
             <div class="book-info">
               <div class="book-title">${book.title}</div>
