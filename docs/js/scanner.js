@@ -8,8 +8,37 @@ class BarcodeScanner {
     this.isScanning = false;
   }
 
+  /**
+   * Clean up scanner instance completely.
+   * Stops camera stream and removes DOM elements.
+   */
+  async cleanup() {
+    if (!this.scanner) return;
+
+    try {
+      if (this.isScanning) {
+        await this.scanner.stop();
+      }
+    } catch (e) {
+      // Ignore stop errors
+    }
+
+    try {
+      await this.scanner.clear();
+    } catch (e) {
+      // Ignore clear errors
+    }
+
+    this.scanner = null;
+    this.isScanning = false;
+  }
+
   async start() {
+    // Don't start if already scanning
     if (this.isScanning) return;
+
+    // Clean up any previous instance first (prevents double cameras)
+    await this.cleanup();
 
     const { Html5Qrcode } = window;
 
@@ -20,7 +49,6 @@ class BarcodeScanner {
     };
 
     const onSuccess = (decodedText) => {
-      // ISBN barcodes are typically EAN-13 or ISBN-10/13
       if (this.isValidISBN(decodedText)) {
         this.onScan(decodedText);
         this.stop();
@@ -31,11 +59,11 @@ class BarcodeScanner {
       // Ignore scan errors (they happen continuously until a code is found)
     };
 
-    // Always create a fresh scanner instance to avoid state issues
+    // Create fresh scanner instance
     this.scanner = new Html5Qrcode(this.containerId);
 
     try {
-      // Try back camera first
+      // Try back camera first (preferred for scanning)
       await this.scanner.start(
         { facingMode: 'environment' },
         scanConfig,
@@ -44,18 +72,15 @@ class BarcodeScanner {
       );
       this.isScanning = true;
     } catch (err) {
-      console.error('Back camera failed, trying fallback:', err);
+      console.error('Back camera failed, trying front camera:', err);
 
-      // Clear the failed scanner and create a fresh one
-      try {
-        await this.scanner.clear();
-      } catch (e) {
-        // Ignore clear errors
-      }
+      // Clean up failed attempt completely
+      await this.cleanup();
+
+      // Create fresh instance for retry
       this.scanner = new Html5Qrcode(this.containerId);
 
       try {
-        // Fallback: try front camera
         await this.scanner.start(
           { facingMode: 'user' },
           scanConfig,
@@ -65,6 +90,7 @@ class BarcodeScanner {
         this.isScanning = true;
       } catch (err2) {
         console.error('All camera attempts failed:', err2);
+        await this.cleanup();
         throw new Error('Could not access camera. Please allow camera permissions and ensure you\'re on HTTPS.');
       }
     }
