@@ -135,13 +135,17 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
 
             volume = data["items"][0]["volumeInfo"]
 
-            # Try Open Library cover first, then Google Books
+            # Try Open Library cover first, then use Google Books cover from volume data
             ol_cover_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
             cover_url = None
             if await _check_cover_valid(client, ol_cover_url):
                 cover_url = ol_cover_url
             else:
-                cover_url = await _get_google_books_cover(client, isbn)
+                # Extract cover directly from volume data we already have
+                image_links = volume.get("imageLinks", {})
+                gb_cover = image_links.get("thumbnail") or image_links.get("smallThumbnail")
+                if gb_cover:
+                    cover_url = gb_cover.replace("http://", "https://").replace("zoom=1", "zoom=2")
 
             return {
                 "isbn": isbn,
