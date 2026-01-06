@@ -323,6 +323,10 @@ nav a.active {
   border-bottom: 1px solid var(--border-light);
 }
 
+.mobile-menu nav span {
+  display: contents;
+}
+
 /* User menu */
 .user-menu {
   display: flex;

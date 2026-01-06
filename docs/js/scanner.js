@@ -11,11 +11,7 @@ class BarcodeScanner {
   async start() {
     if (this.isScanning) return;
 
-    // Only create a new instance if one doesn't exist
-    if (!this.scanner) {
-      const { Html5Qrcode } = window;
-      this.scanner = new Html5Qrcode(this.containerId);
-    }
+    const { Html5Qrcode } = window;
 
     const scanConfig = {
       fps: 10,
@@ -35,6 +31,9 @@ class BarcodeScanner {
       // Ignore scan errors (they happen continuously until a code is found)
     };
 
+    // Always create a fresh scanner instance to avoid state issues
+    this.scanner = new Html5Qrcode(this.containerId);
+
     try {
       // Try back camera first
       await this.scanner.start(
@@ -45,9 +44,18 @@ class BarcodeScanner {
       );
       this.isScanning = true;
     } catch (err) {
-      console.error('Back camera failed, trying any camera:', err);
+      console.error('Back camera failed, trying fallback:', err);
+
+      // Clear the failed scanner and create a fresh one
       try {
-        // Fallback: try any available camera
+        await this.scanner.clear();
+      } catch (e) {
+        // Ignore clear errors
+      }
+      this.scanner = new Html5Qrcode(this.containerId);
+
+      try {
+        // Fallback: try front camera
         await this.scanner.start(
           { facingMode: 'user' },
           scanConfig,
