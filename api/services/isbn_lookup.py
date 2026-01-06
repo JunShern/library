@@ -8,12 +8,13 @@ OPEN_LIBRARY_BLANK_SIZE = 43
 async def _check_cover_valid(client: httpx.AsyncClient, url: str) -> bool:
     """Check if a cover URL returns a valid image (not a blank placeholder)."""
     try:
-        response = await client.head(url, follow_redirects=True)
+        # Use GET with limited bytes since HEAD doesn't always return content-length
+        response = await client.get(url, follow_redirects=True)
         if response.status_code != 200:
             return False
-        # Open Library's blank image is 43 bytes
-        content_length = response.headers.get("content-length")
-        if content_length and int(content_length) <= OPEN_LIBRARY_BLANK_SIZE:
+        # Open Library's blank image is 43 bytes (1x1 GIF)
+        content_size = len(response.content)
+        if content_size <= OPEN_LIBRARY_BLANK_SIZE:
             return False
         return True
     except Exception:

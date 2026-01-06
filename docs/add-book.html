@@ -262,8 +262,9 @@
       previewSection.classList.remove('hidden');
 
       const previewCover = document.getElementById('preview-cover');
-      previewCover.src = data.cover_url || 'assets/placeholder_book.png';
+      // Set onerror before src to catch load failures
       previewCover.onerror = function() { this.src = 'assets/placeholder_book.png'; };
+      previewCover.src = (data.cover_url && data.cover_url.trim()) || 'assets/placeholder_book.png';
       document.getElementById('preview-title').textContent = data.title;
       document.getElementById('preview-author').textContent = data.author || 'Unknown Author';
       document.getElementById('preview-meta').textContent = [

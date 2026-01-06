@@ -11,8 +11,11 @@ class BarcodeScanner {
   async start() {
     if (this.isScanning) return;
 
-    const { Html5Qrcode } = window;
-    this.scanner = new Html5Qrcode(this.containerId);
+    // Only create a new instance if one doesn't exist
+    if (!this.scanner) {
+      const { Html5Qrcode } = window;
+      this.scanner = new Html5Qrcode(this.containerId);
+    }
 
     try {
       await this.scanner.start(
