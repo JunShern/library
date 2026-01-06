@@ -36,7 +36,7 @@ async def list_books(
 
     # Start with books query
     query = supabase.table("books").select(
-        "*, copies(id, branch_id, condition, loans(id, returned_at))"
+        "*, copies(id, branch_id, loans(id, returned_at))"
     )
 
     # Apply search filter

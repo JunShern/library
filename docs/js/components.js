@@ -42,8 +42,8 @@ function initHeader(options = {}) {
           <a href="branches.html">Branches</a>
           <a href="my-loans.html">My Loans</a>
           <span id="mobile-nav-add-book"></span>
-          <span id="mobile-nav-auth"></span>
         </nav>
+        <div id="mobile-nav-auth" class="mobile-menu-footer"></div>
       </div>
     </div>
   `;
