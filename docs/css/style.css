@@ -486,21 +486,21 @@ select {
    ============================================ */
 .book-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--space-md);
   padding: var(--space-lg) 0;
 }
 
 @media (min-width: 640px) {
   .book-grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--space-lg);
   }
 }
 
 @media (min-width: 1024px) {
   .book-grid {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     gap: var(--space-xl);
   }
 }
@@ -508,7 +508,7 @@ select {
 .book-card {
   display: block;
   background: var(--surface);
-  border-radius: var(--radius-lg);
+  border-radius: 0;
   border: 1px solid var(--border-light);
   overflow: hidden;
   text-decoration: none;
