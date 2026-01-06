@@ -37,8 +37,8 @@ async def _get_google_books_cover(client: httpx.AsyncClient, isbn: str) -> Optio
         image_links = volume.get("imageLinks", {})
         cover_url = image_links.get("thumbnail") or image_links.get("smallThumbnail")
         if cover_url:
-            # Upgrade to HTTPS and larger size
-            return cover_url.replace("http://", "https://").replace("zoom=1", "zoom=2")
+            # Upgrade to HTTPS only (don't change zoom - zoom=2 returns placeholder for many books)
+            return cover_url.replace("http://", "https://")
         return None
     except Exception:
         return None
@@ -145,7 +145,8 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
                 image_links = volume.get("imageLinks", {})
                 gb_cover = image_links.get("thumbnail") or image_links.get("smallThumbnail")
                 if gb_cover:
-                    cover_url = gb_cover.replace("http://", "https://").replace("zoom=1", "zoom=2")
+                    # HTTPS only, don't upgrade zoom (zoom=2 returns placeholder for many books)
+                    cover_url = gb_cover.replace("http://", "https://")
 
             return {
                 "isbn": isbn,
