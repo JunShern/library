@@ -3,7 +3,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 from auth import get_current_user, require_auth, require_admin, get_authenticated_client
-from config import get_supabase_client
+from config import get_supabase_client, get_supabase_admin
 from services.isbn_lookup import lookup_isbn
 
 router = APIRouter(prefix="/books", tags=["books"])
@@ -159,7 +159,7 @@ async def delete_book(book_id: str, user: dict = Depends(require_admin)):
     Delete a book and all its copies.
     Requires admin role.
     """
-    supabase = get_supabase_client()
+    supabase = get_supabase_admin()
 
     # Check if book exists
     existing = supabase.table("books").select("id").eq("id", book_id).execute()
