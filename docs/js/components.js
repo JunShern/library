@@ -59,6 +59,9 @@ function initHeader(options = {}) {
       onAuthChange();
     }
   });
+
+  // Initialize nav state immediately
+  updateNav();
 }
 
 /**
