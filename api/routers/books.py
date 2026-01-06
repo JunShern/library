@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Optional
 from pydantic import BaseModel
 
-from auth import get_current_user, require_auth, get_authenticated_client
+from auth import get_current_user, require_auth, require_admin, get_authenticated_client
 from config import get_supabase_client
 from services.isbn_lookup import lookup_isbn
 
@@ -151,3 +151,22 @@ async def create_book(book: BookCreate, user: dict = Depends(require_auth)):
 
     response = supabase.table("books").insert(book.model_dump()).execute()
     return response.data[0]
+
+
+@router.delete("/{book_id}")
+async def delete_book(book_id: str, user: dict = Depends(require_admin)):
+    """
+    Delete a book and all its copies.
+    Requires admin role.
+    """
+    supabase = get_supabase_client()
+
+    # Check if book exists
+    existing = supabase.table("books").select("id").eq("id", book_id).execute()
+    if not existing.data:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    # Delete book (copies will cascade via FK)
+    supabase.table("books").delete().eq("id", book_id).execute()
+
+    return {"message": "Book deleted successfully"}

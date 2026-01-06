@@ -55,6 +55,10 @@ class ApiClient {
     return this.request('POST', '/books', book);
   }
 
+  async deleteBook(id) {
+    return this.request('DELETE', `/books/${id}`);
+  }
+
   // Copies
   async getCopies(params = {}) {
     const query = new URLSearchParams(params).toString();

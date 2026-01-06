@@ -1,6 +1,47 @@
 import httpx
 from typing import Optional
 
+# Open Library returns a tiny 1x1 image (43 bytes) when no cover exists
+OPEN_LIBRARY_BLANK_SIZE = 43
+
+
+async def _check_cover_valid(client: httpx.AsyncClient, url: str) -> bool:
+    """Check if a cover URL returns a valid image (not a blank placeholder)."""
+    try:
+        response = await client.head(url, follow_redirects=True)
+        if response.status_code != 200:
+            return False
+        # Open Library's blank image is 43 bytes
+        content_length = response.headers.get("content-length")
+        if content_length and int(content_length) <= OPEN_LIBRARY_BLANK_SIZE:
+            return False
+        return True
+    except Exception:
+        return False
+
+
+async def _get_google_books_cover(client: httpx.AsyncClient, isbn: str) -> Optional[str]:
+    """Get cover URL from Google Books if available."""
+    try:
+        response = await client.get(
+            "https://www.googleapis.com/books/v1/volumes",
+            params={"q": f"isbn:{isbn}"}
+        )
+        if response.status_code != 200:
+            return None
+        data = response.json()
+        if data.get("totalItems", 0) == 0:
+            return None
+        volume = data["items"][0].get("volumeInfo", {})
+        image_links = volume.get("imageLinks", {})
+        cover_url = image_links.get("thumbnail") or image_links.get("smallThumbnail")
+        if cover_url:
+            # Upgrade to HTTPS and larger size
+            return cover_url.replace("http://", "https://").replace("zoom=1", "zoom=2")
+        return None
+    except Exception:
+        return None
+
 
 async def lookup_isbn(isbn: str) -> Optional[dict]:
     """
@@ -45,13 +86,18 @@ async def _lookup_open_library(isbn: str) -> Optional[dict]:
                         author_data = author_response.json()
                         author = author_data.get("name")
 
-            # Build cover URL
-            cover_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
+            # Check Open Library cover, fall back to Google Books if invalid
+            ol_cover_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
+            cover_url = None
+            if await _check_cover_valid(client, ol_cover_url):
+                cover_url = ol_cover_url
+            else:
+                # Try Google Books cover as fallback
+                cover_url = await _get_google_books_cover(client, isbn)
 
             # Extract publish year from publish_date
             publish_year = None
             if "publish_date" in data:
-                # Try to extract 4-digit year
                 import re
                 match = re.search(r"\b(19|20)\d{2}\b", data["publish_date"])
                 if match:
@@ -88,9 +134,13 @@ async def _lookup_google_books(isbn: str) -> Optional[dict]:
 
             volume = data["items"][0]["volumeInfo"]
 
-            # Prefer Open Library cover (more reliable than Google Books)
-            # Open Library often has covers even when they lack metadata
-            cover_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
+            # Try Open Library cover first, then Google Books
+            ol_cover_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-M.jpg"
+            cover_url = None
+            if await _check_cover_valid(client, ol_cover_url):
+                cover_url = ol_cover_url
+            else:
+                cover_url = await _get_google_books_cover(client, isbn)
 
             return {
                 "isbn": isbn,

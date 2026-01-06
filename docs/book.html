@@ -78,6 +78,13 @@
               ${book.isbn ? `<div><strong>ISBN:</strong> ${book.isbn}</div>` : ''}
             </div>
             ${book.description ? `<div class="book-description">${book.description}</div>` : ''}
+            ${auth.isAdmin() ? `
+              <div class="book-actions" style="margin-top: 1.5rem;">
+                <button class="btn btn-danger btn-sm" onclick="deleteBook('${book.id}')">
+                  Delete Book
+                </button>
+              </div>
+            ` : ''}
             </div>
           </div>
         </div>
@@ -118,6 +125,22 @@
 
     function showCheckoutModal(copyId) {
       window.location.href = `branch-loans.html?checkout=${copyId}`;
+    }
+
+    async function deleteBook(bookId) {
+      if (!confirm('Are you sure you want to delete this book? This will also delete all copies and cannot be undone.')) {
+        return;
+      }
+
+      try {
+        await api.deleteBook(bookId);
+        showMessage('Book deleted successfully', 'success');
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 1000);
+      } catch (err) {
+        showMessage(err.message);
+      }
     }
 
     // Initialize
