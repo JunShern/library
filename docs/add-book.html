@@ -56,22 +56,6 @@
           <select id="branch-select" required></select>
         </div>
 
-        <div class="form-group">
-          <label for="condition-select">Condition</label>
-          <select id="condition-select">
-            <option value="">Not specified</option>
-            <option value="excellent">Excellent</option>
-            <option value="good">Good</option>
-            <option value="fair">Fair</option>
-            <option value="poor">Poor</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="notes-input">Notes (optional)</label>
-          <textarea id="notes-input" rows="2" placeholder="e.g., Signed by author, missing dust jacket"></textarea>
-        </div>
-
         <div class="mt-2">
           <button id="save-btn" class="btn btn-primary btn-lg">Add to Library</button>
           <button id="cancel-btn" class="btn btn-secondary">Cancel</button>
@@ -96,17 +80,6 @@
         <div class="form-group">
           <label for="manual-branch">Add to Branch</label>
           <select id="manual-branch" required></select>
-        </div>
-
-        <div class="form-group">
-          <label for="manual-condition">Condition</label>
-          <select id="manual-condition">
-            <option value="">Not specified</option>
-            <option value="excellent">Excellent</option>
-            <option value="good">Good</option>
-            <option value="fair">Fair</option>
-            <option value="poor">Poor</option>
-          </select>
         </div>
 
         <div class="mt-2">
@@ -286,23 +259,17 @@
 
     document.getElementById('save-btn').addEventListener('click', async () => {
       const branchId = document.getElementById('branch-select').value;
-      const condition = document.getElementById('condition-select').value;
-      const notes = document.getElementById('notes-input').value;
 
       try {
         await api.createCopy({
           isbn: currentISBN,
           branch_id: branchId,
-          condition: condition || null,
-          notes: notes || null,
         });
 
         showMessage('Book added successfully!', 'success');
         setTimeout(() => {
           currentISBN = null;
           currentBookData = null;
-          document.getElementById('condition-select').value = '';
-          document.getElementById('notes-input').value = '';
           showScanner();
         }, 1500);
       } catch (err) {
@@ -314,7 +281,6 @@
       const title = document.getElementById('manual-title').value.trim();
       const author = document.getElementById('manual-author').value.trim();
       const branchId = document.getElementById('manual-branch').value;
-      const condition = document.getElementById('manual-condition').value;
 
       if (!title) {
         showMessage('Title is required');
@@ -331,7 +297,6 @@
         await api.createCopy({
           book_id: book.id,
           branch_id: branchId,
-          condition: condition || null,
         });
 
         showMessage('Book added successfully!', 'success');

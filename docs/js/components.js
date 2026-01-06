@@ -20,6 +20,7 @@ function initHeader(options = {}) {
         <nav>
           <a href="index.html" ${activePage === 'browse' ? 'class="active"' : ''}>Browse</a>
           <a href="branches.html" ${activePage === 'branches' ? 'class="active"' : ''}>Branches</a>
+          <span id="nav-add-book"></span>
           <span id="nav-auth"></span>
         </nav>
         <button class="nav-toggle" onclick="toggleMobileMenu()" aria-label="Menu">
@@ -40,6 +41,7 @@ function initHeader(options = {}) {
           <a href="index.html">Browse</a>
           <a href="branches.html">Branches</a>
           <a href="my-loans.html">My Loans</a>
+          <span id="mobile-nav-add-book"></span>
           <span id="mobile-nav-auth"></span>
         </nav>
       </div>
@@ -82,7 +84,8 @@ function closeMobileMenu(event) {
 function updateNav() {
   const navAuth = document.getElementById('nav-auth');
   const mobileNavAuth = document.getElementById('mobile-nav-auth');
-  const addBookBtn = document.getElementById('add-book-btn');
+  const navAddBook = document.getElementById('nav-add-book');
+  const mobileNavAddBook = document.getElementById('mobile-nav-add-book');
 
   if (auth.isAuthenticated()) {
     navAuth.innerHTML = `
@@ -96,17 +99,19 @@ function updateNav() {
       <a href="#" onclick="handleSignOut(); return false;">Sign Out</a>
     `;
 
-    // Show Add Book button if on Browse page and user is branch owner
-    if (addBookBtn && auth.isBranchOwner()) {
-      addBookBtn.innerHTML = '<a href="add-book.html" class="btn btn-primary">+ Add Book</a>';
+    // Show Add Books in nav if user is branch owner
+    if (auth.isBranchOwner()) {
+      navAddBook.innerHTML = '<a href="add-book.html">Add Books</a>';
+      mobileNavAddBook.innerHTML = '<a href="add-book.html">Add Books</a>';
+    } else {
+      navAddBook.innerHTML = '';
+      mobileNavAddBook.innerHTML = '';
     }
   } else {
     navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
     mobileNavAuth.innerHTML = '<a href="login.html">Sign In</a>';
-
-    if (addBookBtn) {
-      addBookBtn.innerHTML = '';
-    }
+    navAddBook.innerHTML = '';
+    mobileNavAddBook.innerHTML = '';
   }
 }
 

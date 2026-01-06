@@ -13,13 +13,6 @@ class CopyCreate(BaseModel):
     book_id: Optional[str] = None  # If provided, links to existing book
     branch_id: str
     isbn: Optional[str] = None  # If provided without book_id, creates/finds book
-    condition: Optional[str] = None
-    notes: Optional[str] = None
-
-
-class CopyUpdate(BaseModel):
-    condition: Optional[str] = None
-    notes: Optional[str] = None
 
 
 @router.get("")
@@ -141,45 +134,10 @@ async def create_copy(
     copy_data = {
         "book_id": book_id,
         "branch_id": copy.branch_id,
-        "condition": copy.condition,
-        "notes": copy.notes,
         "added_by": user["id"],
     }
 
     response = supabase.table("copies").insert(copy_data).execute()
-    return response.data[0]
-
-
-@router.put("/{copy_id}")
-async def update_copy(
-    copy_id: str,
-    update: CopyUpdate,
-    user: dict = Depends(require_branch_owner),
-    authorization: Optional[str] = Header(None),
-):
-    """Update a copy (condition, notes). Requires branch_owner role."""
-    supabase = get_authenticated_client(authorization)
-
-    # Verify copy exists and user owns the branch
-    copy_response = supabase.table("copies").select(
-        "branch_id, branch:branches(owner_id)"
-    ).eq("id", copy_id).single().execute()
-
-    if not copy_response.data:
-        raise HTTPException(status_code=404, detail="Copy not found")
-
-    owner_id = copy_response.data["branch"]["owner_id"]
-    if owner_id != user["id"] and user["role"] != "admin":
-        raise HTTPException(status_code=403, detail="You don't own this branch")
-
-    # Update
-    update_data = {k: v for k, v in update.model_dump().items() if v is not None}
-    if not update_data:
-        raise HTTPException(status_code=400, detail="No fields to update")
-
-    response = supabase.table("copies").update(update_data).eq(
-        "id", copy_id
-    ).execute()
     return response.data[0]
 
 

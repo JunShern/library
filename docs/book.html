@@ -78,48 +78,62 @@
               ${book.isbn ? `<div><strong>ISBN:</strong> ${book.isbn}</div>` : ''}
             </div>
             ${book.description ? `<div class="book-description">${book.description}</div>` : ''}
-            ${auth.isAdmin() ? `
-              <div class="book-actions" style="margin-top: 1.5rem;">
-                <button class="btn btn-danger btn-sm" onclick="deleteBook('${book.id}')">
-                  Delete Book
-                </button>
-              </div>
-            ` : ''}
             </div>
           </div>
         </div>
 
         <div class="copies-list">
           <h2>Copies (${copies.length})</h2>
-          ${Object.entries(copyGroups).map(([branchName, branchCopies]) => `
-            <div class="mb-2">
-              <h3><span class="badge badge-branch">${branchName}</span></h3>
-              ${branchCopies.map(copy => `
-                <div class="copy-item">
-                  <div class="copy-info">
-                    <span class="badge ${copy.is_available ? 'badge-available' : 'badge-unavailable'}">
-                      ${copy.is_available ? 'Available' : 'On Loan'}
-                    </span>
-                    ${copy.condition ? `<span>Condition: ${copy.condition}</span>` : ''}
-                    ${copy.notes ? `<span class="text-muted">${copy.notes}</span>` : ''}
-                  </div>
-                  ${!copy.is_available && copy.current_loan ? `
-                    <div class="text-muted">
-                      Due: ${formatDate(copy.current_loan.due_date)}
-                      ${isOverdue(copy.current_loan.due_date) ? '<span class="overdue">(Overdue)</span>' : ''}
-                    </div>
-                  ` : ''}
-                  ${auth.isBranchOwner() && copy.is_available ? `
-                    <button class="btn btn-primary btn-sm" onclick="showCheckoutModal('${copy.id}')">
-                      Check Out
-                    </button>
-                  ` : ''}
-                </div>
-              `).join('')}
+          ${copies.length > 0 ? `
+            <div class="table-container">
+              <table class="copies-table">
+                <thead>
+                  <tr>
+                    <th>Location</th>
+                    <th>Status</th>
+                    ${auth.isBranchOwner() ? '<th></th>' : ''}
+                  </tr>
+                </thead>
+                <tbody>
+                  ${copies.map(copy => `
+                    <tr>
+                      <td>${copy.branch?.name || 'Unknown'}</td>
+                      <td>
+                        <span class="badge ${copy.is_available ? 'badge-available' : 'badge-unavailable'}">
+                          ${copy.is_available ? 'Available' : 'On Loan'}
+                        </span>
+                        ${!copy.is_available && copy.current_loan ? `
+                          <div class="text-muted text-sm">
+                            Due: ${formatDate(copy.current_loan.due_date)}
+                            ${isOverdue(copy.current_loan.due_date) ? '<span class="overdue">(Overdue)</span>' : ''}
+                          </div>
+                        ` : ''}
+                      </td>
+                      ${auth.isBranchOwner() ? `
+                        <td>
+                          ${copy.is_available ? `
+                            <button class="btn btn-primary btn-sm" onclick="showCheckoutModal('${copy.id}')">
+                              Check Out
+                            </button>
+                          ` : ''}
+                        </td>
+                      ` : ''}
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
             </div>
-          `).join('')}
-          ${copies.length === 0 ? '<p class="text-muted">No copies available</p>' : ''}
+          ` : '<p class="text-muted">No copies available</p>'}
         </div>
+
+        ${auth.isAdmin() ? `
+          <div class="admin-actions">
+            <p class="text-muted text-sm">Admin</p>
+            <button class="btn btn-danger btn-sm" onclick="deleteBook('${book.id}')">
+              Delete Book
+            </button>
+          </div>
+        ` : ''}
       `;
     }
 

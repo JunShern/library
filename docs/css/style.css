@@ -198,7 +198,6 @@ header .container {
   font-family: var(--font-serif);
   font-size: var(--font-size-lg);
   font-weight: 400;
-  font-style: italic;
   color: var(--text);
   letter-spacing: 0.02em;
 }
@@ -661,7 +660,7 @@ select {
    Book Detail
    ============================================ */
 .book-detail {
-  padding: var(--space-lg) 0;
+  padding: var(--space-xl) 0;
 }
 
 .book-detail-grid {
@@ -671,7 +670,7 @@ select {
 
 @media (min-width: 768px) {
   .book-detail-grid {
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 240px 1fr;
     gap: var(--space-2xl);
   }
 }
@@ -679,9 +678,9 @@ select {
 .book-detail-cover {
   aspect-ratio: 2/3;
   background: linear-gradient(135deg, var(--border-light) 0%, var(--bg) 100%);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   overflow: hidden;
-  max-width: 280px;
+  max-width: 240px;
   margin: 0 auto;
 }
 
@@ -699,7 +698,7 @@ select {
 
 .book-detail-info h1 {
   font-size: var(--font-size-2xl);
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-md);
 }
 
 @media (min-width: 768px) {
@@ -710,7 +709,6 @@ select {
 
 .book-meta {
   color: var(--text-muted);
-  margin-bottom: var(--space-lg);
   font-size: var(--font-size-sm);
 }
 
@@ -718,8 +716,12 @@ select {
   margin-bottom: var(--space-xs);
 }
 
+.book-meta div:last-child {
+  margin-bottom: 0;
+}
+
 .book-description {
-  margin: var(--space-xl) 0;
+  margin-top: var(--space-lg);
   line-height: 1.8;
   color: var(--text);
 }
@@ -727,32 +729,69 @@ select {
 /* Copies List */
 .copies-list {
   margin-top: var(--space-2xl);
+  padding-top: var(--space-xl);
+  padding-bottom: var(--space-2xl);
+  border-top: 1px solid var(--border-light);
 }
 
-.copy-item {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-lg);
-  background: var(--surface);
+.copies-list h2 {
+  margin-bottom: var(--space-lg);
+}
+
+.copies-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  border: 1px solid var(--border);
   border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  margin-bottom: var(--space-md);
+  overflow: hidden;
 }
 
-@media (min-width: 640px) {
-  .copy-item {
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-  }
+.copies-table th,
+.copies-table td {
+  padding: var(--space-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
 }
 
-.copy-info {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-md);
+.copies-table th {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.copies-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.copies-table tbody tr:hover {
+  background: var(--bg);
+}
+
+.copies-table td:last-child {
+  text-align: right;
+}
+
+/* Admin Actions */
+.admin-actions {
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-xl);
+  padding-bottom: var(--space-3xl);
+  border-top: 1px solid var(--border-light);
+}
+
+.admin-actions p {
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 /* ============================================
