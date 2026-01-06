@@ -595,35 +595,66 @@ select {
 /* ============================================
    Search & Filters
    ============================================ */
-.search-bar {
+.filter-bar {
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
-  padding: var(--space-lg) 0;
+  gap: var(--space-xs);
+  padding: var(--space-sm) 0;
 }
 
-@media (min-width: 768px) {
-  .search-bar {
-    flex-direction: row;
-    align-items: center;
-  }
-}
-
-.search-input {
-  flex: 1;
-}
-
-.filters {
+.filter-row {
   display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.filter-label {
+  font-family: var(--font-sans);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 4.5rem;
+}
+
+.filter-options {
+  display: flex;
+  align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
 }
 
-.filters select {
-  min-width: auto;
-  min-height: 40px;
-  padding: 0.5rem 2rem 0.5rem 0.75rem;
-  font-size: var(--font-size-sm);
+.checkbox-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  color: var(--text);
+  user-select: none;
+  line-height: 1;
+}
+
+.checkbox-filter input[type="checkbox"] {
+  width: 0.9rem;
+  height: 0.9rem;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+  accent-color: var(--primary);
+  flex-shrink: 0;
+}
+
+.checkbox-filter:hover {
+  color: var(--primary);
+}
+
+.search-bar {
+  padding-bottom: var(--space-md);
+}
+
+.search-bar input {
+  width: 100%;
 }
 
 /* ============================================

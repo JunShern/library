@@ -21,24 +21,26 @@
       <div id="add-book-btn"></div>
     </div>
 
+    <div class="filter-bar">
+      <div class="filter-row">
+        <span class="filter-label">Location</span>
+        <div class="filter-options" id="branch-filters"></div>
+      </div>
+      <div class="filter-row">
+        <span class="filter-label">Availability</span>
+        <label class="checkbox-filter">
+          <input type="checkbox" id="availability-filter">
+          <span>Available only</span>
+        </label>
+      </div>
+    </div>
+
     <div class="search-bar">
-      <div class="search-input">
-        <input
-          type="text"
-          id="search-input"
-          placeholder="Search by title or author..."
-        >
-      </div>
-      <div class="filters">
-        <select id="branch-filter">
-          <option value="">All Branches</option>
-        </select>
-        <select id="availability-filter">
-          <option value="">All</option>
-          <option value="true">Available</option>
-          <option value="false">On Loan</option>
-        </select>
-      </div>
+      <input
+        type="text"
+        id="search-input"
+        placeholder="Search by title or author..."
+      >
     </div>
 
     <div id="book-grid" class="book-grid">
@@ -62,13 +64,19 @@
       try {
         const response = await api.getBranches();
         branches = response.branches;
-        const select = document.getElementById('branch-filter');
-        branches.forEach(branch => {
-          const option = document.createElement('option');
-          option.value = branch.id;
-          option.textContent = branch.name;
-          select.appendChild(option);
+        const container = document.getElementById('branch-filters');
+        container.innerHTML = branches.map(branch => `
+          <label class="checkbox-filter">
+            <input type="checkbox" name="branch" value="${branch.id}" checked>
+            <span>${branch.name}</span>
+          </label>
+        `).join('');
+        // Add change listeners to branch checkboxes
+        container.querySelectorAll('input[name="branch"]').forEach(cb => {
+          cb.addEventListener('change', loadBooks);
         });
+        // Load books after branches are ready
+        loadBooks();
       } catch (err) {
         console.error('Error loading branches:', err);
       }
@@ -81,15 +89,37 @@
       try {
         const params = {};
         const search = document.getElementById('search-input').value;
-        const branch = document.getElementById('branch-filter').value;
-        const available = document.getElementById('availability-filter').value;
+        const allBranchCheckboxes = document.querySelectorAll('input[name="branch"]');
+        const checkedBranches = Array.from(
+          document.querySelectorAll('input[name="branch"]:checked')
+        ).map(cb => cb.value);
+        const availableOnly = document.getElementById('availability-filter').checked;
 
         if (search) params.q = search;
-        if (branch) params.branch = branch;
-        if (available) params.available = available;
+        if (availableOnly) params.available = 'true';
+
+        // Only filter by branch if some (but not all) are unchecked
+        const allChecked = checkedBranches.length === allBranchCheckboxes.length;
+        if (!allChecked && checkedBranches.length === 1) {
+          params.branch = checkedBranches[0];
+        }
 
         const response = await api.getBooks(params);
-        allBooks = response.books;
+        let books = response.books;
+
+        // Client-side filter when multiple (but not all) branches selected
+        if (!allChecked && checkedBranches.length > 1) {
+          books = books.filter(book =>
+            book.copies?.some(c => checkedBranches.includes(c.branch_id))
+          );
+        }
+
+        // If no branches checked, show nothing
+        if (checkedBranches.length === 0) {
+          books = [];
+        }
+
+        allBooks = books;
         renderBooks(allBooks);
       } catch (err) {
         grid.innerHTML = `<div class="message message-error">${err.message}</div>`;
@@ -104,30 +134,19 @@
         return;
       }
 
-      grid.innerHTML = books.map(book => {
-        const copies = book.copies || [];
-        const availableCopies = copies.filter(c =>
-          !c.loans?.some(l => !l.returned_at)
-        ).length;
-        const isAvailable = availableCopies > 0;
-
-        return `
-          <a href="book.html?id=${book.id}" class="book-card">
-            <div class="book-cover">
-              <img src="${book.cover_url || 'assets/placeholder_book.png'}"
-                   alt="${book.title}"
-                   onerror="this.src='assets/placeholder_book.png'">
-            </div>
-            <div class="book-info">
-              <div class="book-title">${book.title}</div>
-              <div class="book-author">${book.author || 'Unknown Author'}</div>
-              <span class="badge ${isAvailable ? 'badge-available' : 'badge-unavailable'}">
-                ${isAvailable ? `${availableCopies} available` : 'On loan'}
-              </span>
-            </div>
-          </a>
-        `;
-      }).join('');
+      grid.innerHTML = books.map(book => `
+        <a href="book.html?id=${book.id}" class="book-card">
+          <div class="book-cover">
+            <img src="${book.cover_url || 'assets/placeholder_book.png'}"
+                 alt="${book.title}"
+                 onerror="this.src='assets/placeholder_book.png'">
+          </div>
+          <div class="book-info">
+            <div class="book-title">${book.title}</div>
+            <div class="book-author">${book.author || 'Unknown Author'}</div>
+          </div>
+        </a>
+      `).join('');
     }
 
     // Debounce search
@@ -137,13 +156,11 @@
       searchTimeout = setTimeout(loadBooks, 300);
     });
 
-    document.getElementById('branch-filter').addEventListener('change', loadBooks);
     document.getElementById('availability-filter').addEventListener('change', loadBooks);
 
     // Initialize
     initHeader({ activePage: 'browse' });
     loadBranches();
-    loadBooks();
   </script>
 </body>
 </html>
