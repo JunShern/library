@@ -17,29 +17,48 @@ class BarcodeScanner {
       this.scanner = new Html5Qrcode(this.containerId);
     }
 
+    const scanConfig = {
+      fps: 10,
+      qrbox: { width: 250, height: 150 },
+      aspectRatio: 1.5,
+    };
+
+    const onSuccess = (decodedText) => {
+      // ISBN barcodes are typically EAN-13 or ISBN-10/13
+      if (this.isValidISBN(decodedText)) {
+        this.onScan(decodedText);
+        this.stop();
+      }
+    };
+
+    const onError = () => {
+      // Ignore scan errors (they happen continuously until a code is found)
+    };
+
     try {
+      // Try back camera first
       await this.scanner.start(
         { facingMode: 'environment' },
-        {
-          fps: 10,
-          qrbox: { width: 250, height: 150 },
-          aspectRatio: 1.5,
-        },
-        (decodedText) => {
-          // ISBN barcodes are typically EAN-13 or ISBN-10/13
-          if (this.isValidISBN(decodedText)) {
-            this.onScan(decodedText);
-            this.stop();
-          }
-        },
-        (errorMessage) => {
-          // Ignore scan errors (they happen continuously until a code is found)
-        }
+        scanConfig,
+        onSuccess,
+        onError
       );
       this.isScanning = true;
     } catch (err) {
-      console.error('Scanner start error:', err);
-      throw new Error('Could not access camera. Please allow camera permissions.');
+      console.error('Back camera failed, trying any camera:', err);
+      try {
+        // Fallback: try any available camera
+        await this.scanner.start(
+          { facingMode: 'user' },
+          scanConfig,
+          onSuccess,
+          onError
+        );
+        this.isScanning = true;
+      } catch (err2) {
+        console.error('All camera attempts failed:', err2);
+        throw new Error('Could not access camera. Please allow camera permissions and ensure you\'re on HTTPS.');
+      }
     }
   }
 
