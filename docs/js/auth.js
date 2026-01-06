@@ -80,10 +80,17 @@ class Auth {
   }
 
   async signOut() {
-    const { error } = await this.supabase.auth.signOut();
-    if (error) throw error;
+    // Call Supabase signOut (ignore errors - session may already be gone)
+    try {
+      await this.supabase.auth.signOut();
+    } catch (e) {
+      // Ignore network errors etc.
+    }
+
+    // Always clear local state and notify UI
     this.user = null;
     this.session = null;
+    this.notifyListeners();
   }
 
   getAccessToken() {
