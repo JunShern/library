@@ -18,7 +18,7 @@ function initHeader(options = {}) {
           <span>Buku-Buka</span>
         </a>
         <nav>
-          <a href="index.html" ${activePage === 'browse' ? 'class="active"' : ''}>Browse</a>
+          <a href="index.html" ${activePage === 'browse' ? 'class="active"' : ''}>Discover</a>
           <a href="branches.html" ${activePage === 'branches' ? 'class="active"' : ''}>Branches</a>
           <span id="nav-add-book"></span>
           <span id="nav-auth"></span>
@@ -38,7 +38,7 @@ function initHeader(options = {}) {
       <div class="mobile-menu-content" onclick="event.stopPropagation()">
         <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
         <nav>
-          <a href="index.html">Browse</a>
+          <a href="index.html">Discover</a>
           <a href="branches.html">Branches</a>
           <a href="my-loans.html">My Loans</a>
           <span id="mobile-nav-add-book"></span>
