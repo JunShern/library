@@ -59,7 +59,9 @@
 
       try {
         const status = document.getElementById('status-filter').value;
-        const params = {};
+        const params = {
+          borrower_id: auth.user.id
+        };
         if (status) params.status = status;
 
         const response = await api.getLoans(params);
