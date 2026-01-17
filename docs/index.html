@@ -15,29 +15,36 @@
     <div id="messages"></div>
 
     <div class="page-header">
-      <h1>Browse</h1>
-    </div>
-
-    <div class="filter-bar">
-      <div class="filter-row">
-        <span class="filter-label">Location</span>
-        <div class="filter-options" id="branch-filters"></div>
-      </div>
-      <div class="filter-row">
-        <span class="filter-label">Availability</span>
-        <label class="checkbox-filter">
-          <input type="checkbox" id="availability-filter">
-          <span>Available only</span>
-        </label>
-      </div>
+      <h1>Welcome to the Library</h1>
     </div>
 
     <div class="search-bar">
-      <input
-        type="text"
-        id="search-input"
-        placeholder="Search by title or author..."
-      >
+      <div class="search-wrapper">
+        <input
+          type="text"
+          id="search-input"
+          placeholder="Search by title or author..."
+        >
+        <button type="button" class="filter-toggle" id="filter-toggle" onclick="toggleFilters()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
+          </svg>
+          Filters
+        </button>
+      </div>
+      <div class="filter-dropdown hidden" id="filter-dropdown">
+        <div class="filter-row">
+          <span class="filter-label">Location</span>
+          <div class="filter-options" id="branch-filters"></div>
+        </div>
+        <div class="filter-row">
+          <span class="filter-label">Availability</span>
+          <label class="checkbox-filter">
+            <input type="checkbox" id="availability-filter">
+            <span>Available only</span>
+          </label>
+        </div>
+      </div>
     </div>
 
     <div id="book-grid" class="book-grid">
@@ -160,6 +167,22 @@
     });
 
     document.getElementById('availability-filter').addEventListener('change', loadBooks);
+
+    // Filter dropdown toggle
+    function toggleFilters() {
+      document.getElementById('filter-dropdown').classList.toggle('hidden');
+      document.getElementById('filter-toggle').classList.toggle('active');
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      const dropdown = document.getElementById('filter-dropdown');
+      const toggle = document.getElementById('filter-toggle');
+      if (!dropdown.contains(e.target) && !toggle.contains(e.target)) {
+        dropdown.classList.add('hidden');
+        toggle.classList.remove('active');
+      }
+    });
 
     // Initialize
     initHeader({ activePage: 'browse' });

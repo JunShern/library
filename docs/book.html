@@ -86,11 +86,11 @@
             <div class="book-detail-info">
               <h1>${book.title}</h1>
             <div class="book-meta">
-              ${book.author ? `<div><strong>Author:</strong> ${book.author}</div>` : ''}
-              ${book.publisher ? `<div><strong>Publisher:</strong> ${book.publisher}</div>` : ''}
-              ${book.publish_year ? `<div><strong>Year:</strong> ${book.publish_year}</div>` : ''}
-              ${book.page_count ? `<div><strong>Pages:</strong> ${book.page_count}</div>` : ''}
-              ${book.isbn ? `<div><strong>ISBN:</strong> ${book.isbn}</div>` : ''}
+              ${book.author ? `<div><strong>Author</strong><span>${book.author}</span></div>` : ''}
+              ${book.publisher ? `<div><strong>Publisher</strong><span>${book.publisher}</span></div>` : ''}
+              ${book.publish_year ? `<div><strong>Year</strong><span>${book.publish_year}</span></div>` : ''}
+              ${book.page_count ? `<div><strong>Pages</strong><span>${book.page_count}</span></div>` : ''}
+              ${book.isbn ? `<div><strong>ISBN</strong><span>${book.isbn}</span></div>` : ''}
             </div>
             ${book.description ? `<div class="book-description">${book.description}</div>` : ''}
             </div>
@@ -100,41 +100,39 @@
         <div class="copies-list">
           <h2>Copies (${copies.length})</h2>
           ${copies.length > 0 ? `
-            <div class="table-container">
-              <table class="copies-table">
-                <thead>
+            <table class="copies-table">
+              <thead>
+                <tr>
+                  <th>Location</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${copies.map(copy => `
                   <tr>
-                    <th>Location</th>
-                    <th>Status</th>
-                    <th></th>
+                    <td>${copy.branch?.name || 'Unknown'}</td>
+                    <td>
+                      <span class="badge ${copy.is_available ? 'badge-available' : 'badge-unavailable'}">
+                        ${copy.is_available ? 'Available' : 'On Loan'}
+                      </span>
+                    </td>
+                    <td>
+                      ${copy.is_available ? (auth.isBranchOwner() ? `
+                        <button class="btn btn-primary btn-sm" onclick="showCheckoutModal('${copy.id}')">
+                          Check Out
+                        </button>
+                      ` : `
+                        <button class="btn btn-primary btn-sm" data-branch="${(copy.branch?.name || 'Unknown').replace(/"/g, '&quot;')}" data-owner="${(copy.branch?.owner?.name || 'the branch owner').replace(/"/g, '&quot;')}" onclick="showContactModal(this.dataset.branch, this.dataset.owner)">
+                          Borrow
+                        </button>
+                      `) : ''}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  ${copies.map(copy => `
-                    <tr>
-                      <td>${copy.branch?.name || 'Unknown'}</td>
-                      <td>
-                        <span class="badge ${copy.is_available ? 'badge-available' : 'badge-unavailable'}">
-                          ${copy.is_available ? 'Available' : 'On Loan'}
-                        </span>
-                      </td>
-                      <td>
-                        ${copy.is_available ? (auth.isBranchOwner() ? `
-                          <button class="btn btn-primary btn-sm" onclick="showCheckoutModal('${copy.id}')">
-                            Check Out
-                          </button>
-                        ` : `
-                          <button class="btn btn-primary btn-sm" data-branch="${(copy.branch?.name || 'Unknown').replace(/"/g, '&quot;')}" data-owner="${(copy.branch?.owner?.name || 'the branch owner').replace(/"/g, '&quot;')}" onclick="showContactModal(this.dataset.branch, this.dataset.owner)">
-                            Borrow
-                          </button>
-                        `) : ''}
-                      </td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            </div>
-          ` : '<p class="text-muted">No copies available</p>'}
+                `).join('')}
+              </tbody>
+            </table>
+          ` : '<p class="text-muted text-center">No copies available</p>'}
         </div>
 
         ${auth.isAdmin() ? `
