@@ -21,6 +21,21 @@
     </div>
   </main>
 
+  <!-- Contact Branch Owner Modal -->
+  <div id="contact-modal" class="modal-overlay hidden">
+    <div class="card" style="width: 400px; max-width: 90%;">
+      <div class="card-body">
+        <h3>How to Borrow</h3>
+        <p>Please contact the branch owner to check out this book:</p>
+        <p><strong>Branch:</strong> <span id="contact-branch"></span></p>
+        <p><strong>Owner:</strong> <span id="contact-owner"></span></p>
+        <div class="mt-2">
+          <button class="btn btn-secondary" onclick="hideContactModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="js/config.js"></script>
   <script src="js/auth.js"></script>
@@ -91,7 +106,7 @@
                   <tr>
                     <th>Location</th>
                     <th>Status</th>
-                    ${auth.isBranchOwner() ? '<th></th>' : ''}
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -109,15 +124,17 @@
                           </div>
                         ` : ''}
                       </td>
-                      ${auth.isBranchOwner() ? `
-                        <td>
-                          ${copy.is_available ? `
-                            <button class="btn btn-primary btn-sm" onclick="showCheckoutModal('${copy.id}')">
-                              Check Out
-                            </button>
-                          ` : ''}
-                        </td>
-                      ` : ''}
+                      <td>
+                        ${copy.is_available ? (auth.isBranchOwner() ? `
+                          <button class="btn btn-primary btn-sm" onclick="showCheckoutModal('${copy.id}')">
+                            Check Out
+                          </button>
+                        ` : `
+                          <button class="btn btn-primary btn-sm" data-branch="${(copy.branch?.name || 'Unknown').replace(/"/g, '&quot;')}" data-owner="${(copy.branch?.owner?.name || 'the branch owner').replace(/"/g, '&quot;')}" onclick="showContactModal(this.dataset.branch, this.dataset.owner)">
+                            Borrow
+                          </button>
+                        `) : ''}
+                      </td>
                     </tr>
                   `).join('')}
                 </tbody>
@@ -139,6 +156,16 @@
 
     function showCheckoutModal(copyId) {
       window.location.href = `branch-loans.html?checkout=${copyId}`;
+    }
+
+    function showContactModal(branchName, ownerName) {
+      document.getElementById('contact-branch').textContent = branchName;
+      document.getElementById('contact-owner').textContent = ownerName;
+      document.getElementById('contact-modal').classList.remove('hidden');
+    }
+
+    function hideContactModal() {
+      document.getElementById('contact-modal').classList.add('hidden');
     }
 
     async function deleteBook(bookId) {

@@ -1077,6 +1077,24 @@ select {
   text-align: center;
 }
 
+/* Modal overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-overlay.hidden {
+  display: none;
+}
+
 .mt-1 { margin-top: var(--space-sm); }
 .mt-2 { margin-top: var(--space-md); }
 .mt-3 { margin-top: var(--space-lg); }

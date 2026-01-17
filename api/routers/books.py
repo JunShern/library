@@ -109,7 +109,7 @@ async def get_book(book_id: str):
     supabase = get_supabase_client()
 
     response = supabase.table("books").select(
-        "*, copies(*, branch:branches(id, name), loans(id, borrower_id, due_date, returned_at))"
+        "*, copies(*, branch:branches(id, name, owner:profiles(id, name)), loans(id, borrower_id, due_date, returned_at))"
     ).eq("id", book_id).single().execute()
 
     if not response.data:
