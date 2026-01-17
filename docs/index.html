@@ -116,6 +116,9 @@
           books = [];
         }
 
+        // Sort books by title
+        books.sort((a, b) => a.title.localeCompare(b.title));
+
         allBooks = books;
         renderBooks(allBooks);
       } catch (err) {
