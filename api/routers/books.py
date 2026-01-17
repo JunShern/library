@@ -30,9 +30,9 @@ async def list_books(
 ):
     """
     List all books with optional filters.
-    Public endpoint - no auth required.
+    Public endpoint. Uses admin client to bypass RLS for loan visibility.
     """
-    supabase = get_supabase_client()
+    supabase = get_supabase_admin()
 
     # Start with books query
     query = supabase.table("books").select(
