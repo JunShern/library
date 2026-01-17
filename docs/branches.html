@@ -3,20 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visit a Branch - Buku-Buka</title>
+  <title>Branches - Buku-Buka</title>
   <link rel="icon" type="image/png" href="assets/app_icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="has-hero-bg has-hero-bg--library">
   <main class="container">
     <div id="messages"></div>
 
     <div class="page-header">
-      <h1>Visit a Branch</h1>
-      <p class="text-muted">Physical locations where books are available</p>
+      <h1>Branches</h1>
     </div>
 
     <div id="branch-grid" class="branch-grid">
@@ -57,12 +56,9 @@
           <h3>${branch.name}</h3>
           ${branch.address ? `<p class="text-muted">${branch.address}</p>` : ''}
           <p>Owner: ${branch.owner?.name || 'Unknown'}</p>
-          <div class="branch-stats">
-            <span>${branch.copy_count} books</span>
-          </div>
           <div class="mt-2">
             <a href="index.html?branch=${branch.id}" class="btn btn-secondary btn-sm">
-              Browse Books
+              Browse ${branch.copy_count} books
             </a>
             ${auth.isBranchOwner() && auth.user?.id === branch.owner?.id ? `
               <a href="branch-loans.html?branch=${branch.id}" class="btn btn-primary btn-sm">

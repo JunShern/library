@@ -129,7 +129,7 @@ h1, h2, h3, h4 {
 }
 
 h1 {
-  font-size: var(--font-size-2xl);
+  font-size: 3rem;
   margin-bottom: var(--space-md);
 }
 
@@ -828,16 +828,9 @@ select {
 }
 
 .book-detail-info h1 {
-  font-size: var(--font-size-2xl);
   font-weight: 400;
   margin-bottom: var(--space-lg);
   text-align: center;
-}
-
-@media (min-width: 768px) {
-  .book-detail-info h1 {
-    font-size: var(--font-size-3xl);
-  }
 }
 
 .book-meta {
@@ -957,8 +950,9 @@ select {
   background: var(--surface);
   border-radius: var(--radius-lg);
   border: 1px solid var(--border-light);
-  padding: var(--space-xl);
+  padding: var(--space-lg);
   transition: all var(--transition-normal);
+  text-align: center;
 }
 
 .branch-card:hover {
@@ -966,13 +960,21 @@ select {
 }
 
 .branch-card h3 {
-  margin-bottom: var(--space-sm);
+  margin-bottom: var(--space-xs);
+  font-weight: 400;
+}
+
+.branch-card > p {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
 }
 
 .branch-stats {
   display: flex;
+  justify-content: center;
   gap: var(--space-lg);
-  margin: var(--space-lg) 0;
+  margin: var(--space-md) 0;
   color: var(--text-muted);
   font-size: var(--font-size-sm);
 }
@@ -1370,18 +1372,36 @@ select {
 
 .page-header h1 {
   margin-bottom: var(--space-xs);
-  font-size: var(--font-size-2xl);
   font-weight: 400;
-}
-
-@media (min-width: 768px) {
-  .page-header h1 {
-    font-size: 2.25rem;
-  }
 }
 
 .page-header p {
   color: var(--text-muted);
   margin: 0;
   font-size: var(--font-size-base);
+}
+
+/* Hero Background */
+body.has-hero-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 33vh;
+  background-image: url('../assets/clouds.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  z-index: -1;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 100%);
+}
+
+body.has-hero-bg--library::before {
+  background-image: url('../assets/library.jpg');
+}
+
+body.has-hero-bg--loans::before {
+  background-image: url('../assets/loans.jpg');
 }
