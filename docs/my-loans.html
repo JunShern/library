@@ -26,6 +26,8 @@
       </select>
     </div>
 
+    <div class="message message-info">To return a book, please go back to the original branch and pass your book(s) to the branch owner.</div>
+
     <div id="loans-content">
       <div class="loading">
         <div class="spinner"></div>
@@ -80,10 +82,10 @@
           <thead>
             <tr>
               <th>Book</th>
+              <th>Title</th>
               <th>Branch</th>
               <th>Borrowed</th>
               <th>Due Date</th>
-              <th>Status</th>
             </tr>
           </thead>
           <tbody>
@@ -95,30 +97,25 @@
               return `
                 <tr>
                   <td data-label="Book" class="loan-book-cell">
-                    <img src="${book.cover_url || 'assets/placeholder_book.png'}"
-                         alt=""
-                         class="loan-book-cover"
-                         onerror="this.src='assets/placeholder_book.png'">
+                    <a href="book.html?id=${book.id}">
+                      <img src="${book.cover_url || 'assets/placeholder_book.png'}"
+                           alt="${book.title || 'Book cover'}"
+                           class="loan-book-cover"
+                           onerror="this.src='assets/placeholder_book.png'">
+                    </a>
                     <div class="loan-book-info">
                       <a href="book.html?id=${book.id}">${book.title || 'Unknown'}</a>
                       <div class="text-muted">${book.author || ''}</div>
                     </div>
                   </td>
-                  <td data-label="Branch">
-                    <a href="book.html?id=${book.id}" class="loan-mobile-title">${book.title || 'Unknown'}</a>
-                    <span class="loan-mobile-author text-muted">${book.author || ''}</span>
-                    <span class="loan-branch-name">${branch.name || 'Unknown'}</span>
+                  <td data-label="Title" class="loan-title-cell">
+                    <span class="loan-title">${book.title || 'Unknown'}</span>
+                    <span class="loan-author text-muted">${book.author || ''}</span>
                   </td>
+                  <td data-label="Branch">${branch.name || 'Unknown'}</td>
                   <td data-label="Borrowed">${formatDate(loan.borrowed_at)}</td>
-                  <td data-label="Due Date" class="${overdue ? 'overdue' : ''}">${formatDate(loan.due_date)}</td>
-                  <td data-label="Status">
-                    ${loan.returned_at
-                      ? `<span class="badge badge-available">Returned ${formatDate(loan.returned_at)}</span>`
-                      : overdue
-                        ? '<span class="badge badge-unavailable">Overdue</span>'
-                        : ''
-                    }
-                  </td>
+                  <td data-label="Due Date" class="${overdue ? 'overdue' : ''}">${formatDate(loan.due_date)}${overdue ? ' <span class="badge badge-unavailable">Overdue</span>' : ''}</td>
+                  ${loan.returned_at ? `<td data-label="Returned"><span class="badge badge-available">Returned ${formatDate(loan.returned_at)}</span></td>` : ''}
                 </tr>
               `;
             }).join('')}
