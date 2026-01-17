@@ -342,7 +342,7 @@ nav a.active {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  margin-top: var(--space-2xl);
+  margin-top: var(--space-md);
 }
 
 .mobile-menu nav a {
@@ -353,6 +353,16 @@ nav a.active {
 
 .mobile-menu nav span {
   display: contents;
+}
+
+.mobile-nav-separator {
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  padding: var(--space-lg) 0 var(--space-md);
+  margin-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-light);
 }
 
 /* User menu */

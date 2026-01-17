@@ -106,10 +106,14 @@ function updateNav() {
       <a href="#" onclick="handleSignOut(); return false;">Sign Out</a>
     `;
 
-    // Show Add Books in nav if user is branch owner
+    // Show admin links if user is branch owner
     if (auth.isBranchOwner()) {
-      navAddBook.innerHTML = '<a href="add-book.html">Add Books</a>';
-      mobileNavAddBook.innerHTML = '<a href="add-book.html">Add Books</a>';
+      navAddBook.innerHTML = '<a href="add-book.html">Add Books</a><a href="branch-loans.html">Manage Loans</a>';
+      mobileNavAddBook.innerHTML = `
+        <div class="mobile-nav-separator">ADMIN ONLY</div>
+        <a href="add-book.html">Add Books</a>
+        <a href="branch-loans.html">Manage Loans</a>
+      `;
     } else {
       navAddBook.innerHTML = '';
       mobileNavAddBook.innerHTML = '';
