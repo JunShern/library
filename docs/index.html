@@ -134,19 +134,22 @@
         return;
       }
 
-      grid.innerHTML = books.map(book => `
-        <a href="book.html?id=${book.id}" class="book-card">
-          <div class="book-cover">
-            <img src="${book.cover_url || 'assets/placeholder_book.png'}"
-                 alt="${book.title}"
-                 onerror="this.src='assets/placeholder_book.png'">
-          </div>
-          <div class="book-info">
-            <div class="book-title">${book.title}</div>
-            <div class="book-author">${book.author || 'Unknown Author'}</div>
-          </div>
-        </a>
-      `).join('');
+      grid.innerHTML = books.map(book => {
+        const hasCover = book.cover_url && book.cover_url.trim();
+        return `
+          <a href="book.html?id=${book.id}" class="book-card ${hasCover ? '' : 'no-cover'}">
+            <div class="book-cover">
+              <img src="${book.cover_url || 'assets/placeholder_book.png'}"
+                   alt="${book.title}"
+                   onerror="this.parentElement.parentElement.classList.add('no-cover'); this.src='assets/placeholder_book.png'">
+              <div class="book-overlay">
+                <div class="book-title">${book.title}</div>
+                <div class="book-author">${book.author || 'Unknown Author'}</div>
+              </div>
+            </div>
+          </a>
+        `;
+      }).join('');
     }
 
     // Debounce search
