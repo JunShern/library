@@ -8,7 +8,7 @@ const CONFIG = {
   SUPABASE_ANON_KEY: 'sb_publishable_6veWyU7qhpSXdKuEsJZEVQ_ci_nN4Sq',
 
   // Default loan duration in days
-  DEFAULT_LOAN_DAYS: 14,
+  DEFAULT_LOAN_DAYS: 100,
 };
 
 // Make config globally available
