@@ -949,9 +949,164 @@ select {
   background: var(--bg);
 }
 
+.loan-book-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.loan-book-cover {
+  width: 40px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+
+.loan-book-info {
+  min-width: 0;
+}
+
+.loan-book-info a {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Mobile-only title (hidden on desktop) */
+.loan-mobile-title,
+.loan-mobile-author {
+  display: none;
+}
+
 .overdue {
   color: var(--danger);
   font-weight: 600;
+}
+
+/* Responsive loans table - card layout on mobile */
+@media (max-width: 640px) {
+  .loans-table thead {
+    display: none;
+  }
+
+  .loans-table tbody {
+    display: block;
+  }
+
+  .loans-table tr {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    grid-template-rows: auto auto auto auto;
+    gap: 0 var(--space-md);
+    margin-bottom: var(--space-md);
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+  }
+
+  .loans-table tr:hover {
+    background: var(--surface);
+  }
+
+  .loans-table td {
+    display: block;
+    padding: var(--space-xs) var(--space-md) var(--space-xs) 0;
+    border: none;
+    font-size: var(--font-size-sm);
+  }
+
+
+  /* Book cell - cover spans full height on left */
+  .loans-table td:first-child {
+    grid-row: 1 / -1;
+    padding: 0;
+  }
+
+  .loan-book-cell {
+    height: 100%;
+  }
+
+  .loan-book-cover {
+    width: 100px;
+    height: 100%;
+    min-height: 150px;
+    border-radius: 0;
+  }
+
+  .loan-book-info {
+    position: absolute;
+    left: -9999px;
+  }
+
+  /* Show mobile title/author, hide desktop book info */
+  .loan-book-info {
+    display: none;
+  }
+
+  .loan-mobile-title {
+    display: block;
+    font-weight: 600;
+    font-size: var(--font-size-base);
+    margin-bottom: 2px;
+  }
+
+  .loan-mobile-author {
+    display: block;
+    font-size: var(--font-size-xs);
+    margin-bottom: var(--space-xs);
+  }
+
+  .loan-branch-name::before {
+    content: "Branch: ";
+    color: var(--text-muted);
+  }
+
+  /* Branch cell contains title on mobile */
+  .loans-table td[data-label="Branch"] {
+    padding-top: var(--space-md);
+  }
+
+  /* Date rows with inline labels */
+  .loans-table td[data-label="Borrowed"],
+  .loans-table td[data-label="Due Date"] {
+    font-size: var(--font-size-sm);
+    color: var(--text);
+  }
+
+  .loans-table td[data-label="Borrowed"]::before,
+  .loans-table td[data-label="Due Date"]::before {
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+  }
+
+  .loans-table td[data-label="Borrowed"]::before {
+    content: "Borrowed: ";
+  }
+
+  .loans-table td[data-label="Due Date"]::before {
+    content: "Due: ";
+  }
+
+  .loans-table td[data-label="Status"] {
+    font-size: var(--font-size-xs);
+    color: var(--text-muted);
+  }
+
+  .loans-table td[data-label="Due Date"].overdue {
+    color: var(--danger);
+  }
+
+  /* Hide empty status cell */
+  .loans-table td[data-label="Status"]:empty {
+    display: none;
+  }
+
+  .loans-table td:last-child {
+    padding-bottom: var(--space-md);
+  }
 }
 
 /* ============================================

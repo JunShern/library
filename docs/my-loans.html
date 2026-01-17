@@ -92,19 +92,29 @@
 
               return `
                 <tr>
-                  <td>
-                    <a href="book.html?id=${book.id}">${book.title || 'Unknown'}</a>
-                    <div class="text-muted">${book.author || ''}</div>
+                  <td data-label="Book" class="loan-book-cell">
+                    <img src="${book.cover_url || 'assets/placeholder_book.png'}"
+                         alt=""
+                         class="loan-book-cover"
+                         onerror="this.src='assets/placeholder_book.png'">
+                    <div class="loan-book-info">
+                      <a href="book.html?id=${book.id}">${book.title || 'Unknown'}</a>
+                      <div class="text-muted">${book.author || ''}</div>
+                    </div>
                   </td>
-                  <td>${branch.name || 'Unknown'}</td>
-                  <td>${formatDate(loan.borrowed_at)}</td>
-                  <td class="${overdue ? 'overdue' : ''}">${formatDate(loan.due_date)}</td>
-                  <td>
+                  <td data-label="Branch">
+                    <a href="book.html?id=${book.id}" class="loan-mobile-title">${book.title || 'Unknown'}</a>
+                    <span class="loan-mobile-author text-muted">${book.author || ''}</span>
+                    <span class="loan-branch-name">${branch.name || 'Unknown'}</span>
+                  </td>
+                  <td data-label="Borrowed">${formatDate(loan.borrowed_at)}</td>
+                  <td data-label="Due Date" class="${overdue ? 'overdue' : ''}">${formatDate(loan.due_date)}</td>
+                  <td data-label="Status">
                     ${loan.returned_at
                       ? `<span class="badge badge-available">Returned ${formatDate(loan.returned_at)}</span>`
                       : overdue
                         ? '<span class="badge badge-unavailable">Overdue</span>'
-                        : '<span class="badge badge-branch">On Loan</span>'
+                        : ''
                     }
                   </td>
                 </tr>
