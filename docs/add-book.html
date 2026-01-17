@@ -16,17 +16,76 @@
 
     <div class="scanner-container">
       <div class="page-header">
-        <h1>Add a Book</h1>
-        <p class="text-muted">Scan a barcode or enter ISBN manually</p>
+        <h1>Add Books</h1>
+        <p class="text-muted">Choose how you'd like to add a book</p>
+      </div>
+
+      <!-- Flow Selection -->
+      <div id="flow-selection" class="flow-selection">
+        <div class="flow-option" onclick="startScanFlow()">
+          <div class="flow-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.5h4.5m-4.5 0v4.5m0-4.5L9 9m11.25-4.5h-4.5m4.5 0v4.5m0-4.5L15 9m-11.25 11.25h4.5m-4.5 0v-4.5m0 4.5L9 15m11.25 4.5h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+            </svg>
+          </div>
+          <h3>Scan ISBN Barcode</h3>
+          <p class="text-muted">Use your camera to scan a barcode</p>
+        </div>
+
+        <div class="flow-option" onclick="startSearchFlow()">
+          <div class="flow-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+            </svg>
+          </div>
+          <h3>Search by Name or Author</h3>
+          <p class="text-muted">Find books by title or author name</p>
+        </div>
+
+        <div class="flow-option" onclick="startManualFlow()">
+          <div class="flow-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 12.75a.75.75 0 110-1.5.75.75 0 010 1.5zM12 18.75a.75.75 0 110-1.5.75.75 0 010 1.5z" />
+            </svg>
+          </div>
+          <h3>Enter ISBN Manually</h3>
+          <p class="text-muted">Type the ISBN number directly</p>
+        </div>
       </div>
 
       <!-- Scanner -->
-      <div id="scanner-section">
+      <div id="scanner-section" class="hidden">
         <div id="reader"></div>
         <div class="mt-2 text-center">
           <button id="toggle-scanner" class="btn btn-secondary">Stop Scanner</button>
-          <button id="manual-entry-btn" class="btn btn-secondary">Enter ISBN Manually</button>
+          <button id="back-from-scanner" class="btn btn-secondary">Back</button>
         </div>
+      </div>
+
+      <!-- Search by Name/Author -->
+      <div id="search-section" class="hidden">
+        <div class="form-group">
+          <label for="search-query">Search by Title or Author</label>
+          <input type="text" id="search-query" placeholder="e.g., Harry Potter or J.K. Rowling">
+        </div>
+        <div class="mt-2">
+          <button id="search-btn" class="btn btn-primary">Search</button>
+          <button id="back-from-search" class="btn btn-secondary">Back</button>
+        </div>
+
+        <div id="search-loading" class="hidden loading mt-3">
+          <div class="spinner"></div>
+          <p>Searching...</p>
+        </div>
+
+        <div id="search-error" class="hidden message message-error mt-3"></div>
+
+        <div id="search-empty" class="hidden empty-state mt-3">
+          <h3>No books found</h3>
+          <p>Try a different search term</p>
+        </div>
+
+        <div id="search-results" class="search-results hidden"></div>
       </div>
 
       <!-- Manual ISBN Entry -->
@@ -36,7 +95,7 @@
           <input type="text" id="manual-isbn" placeholder="Enter ISBN (e.g., 9780141036144)">
         </div>
         <button id="lookup-btn" class="btn btn-primary">Look Up</button>
-        <button id="back-to-scanner" class="btn btn-secondary">Back to Scanner</button>
+        <button id="back-from-manual" class="btn btn-secondary">Back</button>
       </div>
 
       <!-- Preview -->
@@ -103,9 +162,14 @@
     let scanner = null;
     let currentISBN = null;
     let currentBookData = null;
+    let currentSearchResult = null;
+    let searchResultsCache = [];
     let userBranches = [];
 
+    // DOM references
+    const flowSelection = document.getElementById('flow-selection');
     const scannerSection = document.getElementById('scanner-section');
+    const searchSection = document.getElementById('search-section');
     const manualSection = document.getElementById('manual-section');
     const previewSection = document.getElementById('preview-section');
     const notFoundSection = document.getElementById('not-found-section');
@@ -123,7 +187,7 @@
       }
 
       await loadBranches();
-      startScanner();
+      showFlowSelection();
     }
 
     async function loadBranches() {
@@ -150,17 +214,54 @@
       }
     }
 
+    // Flow navigation
+    function showFlowSelection() {
+      stopScanner();
+      currentISBN = null;
+      currentBookData = null;
+      currentSearchResult = null;
+      flowSelection.classList.remove('hidden');
+      scannerSection.classList.add('hidden');
+      searchSection.classList.add('hidden');
+      manualSection.classList.add('hidden');
+      previewSection.classList.add('hidden');
+      notFoundSection.classList.add('hidden');
+    }
+
+    function startScanFlow() {
+      flowSelection.classList.add('hidden');
+      scannerSection.classList.remove('hidden');
+      startScanner();
+    }
+
+    function startSearchFlow() {
+      flowSelection.classList.add('hidden');
+      searchSection.classList.remove('hidden');
+      document.getElementById('search-query').value = '';
+      document.getElementById('search-results').classList.add('hidden');
+      document.getElementById('search-loading').classList.add('hidden');
+      document.getElementById('search-error').classList.add('hidden');
+      document.getElementById('search-empty').classList.add('hidden');
+      document.getElementById('search-query').focus();
+    }
+
+    function startManualFlow() {
+      flowSelection.classList.add('hidden');
+      manualSection.classList.remove('hidden');
+      document.getElementById('manual-isbn').value = '';
+      document.getElementById('manual-isbn').focus();
+    }
+
+    // Scanner functions
     function startScanner() {
-      // Only create a new scanner if one doesn't exist
       if (!scanner) {
         scanner = new BarcodeScanner('reader', onBarcodeScanned);
       }
 
-      // Start scanning if not already scanning
       if (!scanner.isScanning) {
         scanner.start().catch(err => {
           showMessage(err.message);
-          showManualEntry();
+          showFlowSelection();
         });
       }
 
@@ -182,30 +283,16 @@
       }
     });
 
-    document.getElementById('manual-entry-btn').addEventListener('click', showManualEntry);
-    document.getElementById('back-to-scanner').addEventListener('click', showScanner);
-
-    function showManualEntry() {
-      stopScanner();
-      scannerSection.classList.add('hidden');
-      manualSection.classList.remove('hidden');
-      previewSection.classList.add('hidden');
-      notFoundSection.classList.add('hidden');
-    }
-
-    function showScanner() {
-      manualSection.classList.add('hidden');
-      previewSection.classList.add('hidden');
-      notFoundSection.classList.add('hidden');
-      scannerSection.classList.remove('hidden');
-      startScanner();
-    }
+    document.getElementById('back-from-scanner').addEventListener('click', showFlowSelection);
+    document.getElementById('back-from-search').addEventListener('click', showFlowSelection);
+    document.getElementById('back-from-manual').addEventListener('click', showFlowSelection);
 
     async function onBarcodeScanned(isbn) {
       currentISBN = scanner.normalizeISBN(isbn);
       await lookupISBN(currentISBN);
     }
 
+    // ISBN lookup
     document.getElementById('lookup-btn').addEventListener('click', async () => {
       const isbn = document.getElementById('manual-isbn').value.trim();
       if (!isbn) {
@@ -230,14 +317,134 @@
       }
     }
 
+    // Search functions
+    document.getElementById('search-btn').addEventListener('click', () => {
+      const query = document.getElementById('search-query').value.trim();
+      if (!query) {
+        showMessage('Please enter a search term');
+        return;
+      }
+      if (query.length < 2) {
+        showMessage('Please enter at least 2 characters');
+        return;
+      }
+      searchBooks(query);
+    });
+
+    document.getElementById('search-query').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        document.getElementById('search-btn').click();
+      }
+    });
+
+    async function searchBooks(query) {
+      const resultsContainer = document.getElementById('search-results');
+      const loadingEl = document.getElementById('search-loading');
+      const errorEl = document.getElementById('search-error');
+      const emptyEl = document.getElementById('search-empty');
+
+      // Reset UI state
+      resultsContainer.classList.add('hidden');
+      errorEl.classList.add('hidden');
+      emptyEl.classList.add('hidden');
+      loadingEl.classList.remove('hidden');
+
+      try {
+        const encodedQuery = encodeURIComponent(query);
+        const response = await fetch(
+          `https://openlibrary.org/search.json?q=${encodedQuery}&limit=10&fields=key,title,author_name,publisher,first_publish_year,cover_i,isbn`
+        );
+
+        if (!response.ok) {
+          throw new Error('Search failed. Please try again.');
+        }
+
+        const data = await response.json();
+        loadingEl.classList.add('hidden');
+
+        if (!data.docs || data.docs.length === 0) {
+          emptyEl.classList.remove('hidden');
+          return;
+        }
+
+        renderSearchResults(data.docs);
+        resultsContainer.classList.remove('hidden');
+
+      } catch (err) {
+        loadingEl.classList.add('hidden');
+        errorEl.textContent = err.message || 'Search failed. Please check your connection.';
+        errorEl.classList.remove('hidden');
+      }
+    }
+
+    function renderSearchResults(books) {
+      const container = document.getElementById('search-results');
+      searchResultsCache = books;
+
+      container.innerHTML = books.map((book, index) => {
+        const coverUrl = book.cover_i
+          ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`
+          : 'assets/placeholder_book.png';
+        const authors = book.author_name ? book.author_name.join(', ') : 'Unknown Author';
+        const publisher = book.publisher ? book.publisher[0] : '';
+        const year = book.first_publish_year || '';
+        const meta = [publisher, year].filter(Boolean).join(', ');
+
+        return `
+          <div class="search-result-item" onclick="selectSearchResult(${index})">
+            <div class="search-result-cover">
+              <img src="${coverUrl}" alt="" onerror="this.src='assets/placeholder_book.png'">
+            </div>
+            <div class="search-result-info">
+              <div class="search-result-title">${escapeHtml(book.title)}</div>
+              <div class="search-result-author">${escapeHtml(authors)}</div>
+              ${meta ? `<div class="search-result-meta">${escapeHtml(meta)}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectSearchResult(index) {
+      const book = searchResultsCache[index];
+      if (!book) return;
+
+      // Transform Open Library data to app's format
+      currentSearchResult = {
+        title: book.title,
+        author: book.author_name ? book.author_name.join(', ') : null,
+        publisher: book.publisher ? book.publisher[0] : null,
+        publish_year: book.first_publish_year || null,
+        cover_url: book.cover_i
+          ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`
+          : null,
+        isbn: book.isbn ? book.isbn[0] : null
+      };
+
+      currentISBN = currentSearchResult.isbn;
+      currentBookData = currentSearchResult;
+
+      searchSection.classList.add('hidden');
+      showPreview(currentSearchResult);
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // Preview and save
     function showPreview(data) {
+      flowSelection.classList.add('hidden');
       scannerSection.classList.add('hidden');
+      searchSection.classList.add('hidden');
       manualSection.classList.add('hidden');
       notFoundSection.classList.add('hidden');
       previewSection.classList.remove('hidden');
 
       const previewCover = document.getElementById('preview-cover');
-      // Set onerror before src to catch load failures
       previewCover.onerror = function() { this.src = 'assets/placeholder_book.png'; };
       previewCover.src = (data.cover_url && data.cover_url.trim()) || 'assets/placeholder_book.png';
       document.getElementById('preview-title').textContent = data.title;
@@ -250,31 +457,61 @@
     }
 
     function showNotFound(isbn) {
+      flowSelection.classList.add('hidden');
       scannerSection.classList.add('hidden');
+      searchSection.classList.add('hidden');
       manualSection.classList.add('hidden');
       previewSection.classList.add('hidden');
       notFoundSection.classList.remove('hidden');
     }
 
-    document.getElementById('cancel-btn').addEventListener('click', showScanner);
-    document.getElementById('cancel-manual-btn').addEventListener('click', showScanner);
+    document.getElementById('cancel-btn').addEventListener('click', showFlowSelection);
+    document.getElementById('cancel-manual-btn').addEventListener('click', showFlowSelection);
 
     document.getElementById('save-btn').addEventListener('click', async () => {
       const branchId = document.getElementById('branch-select').value;
 
       try {
-        await api.createCopy({
-          isbn: currentISBN,
-          branch_id: branchId,
-        });
+        if (currentSearchResult) {
+          // From search - create book with all available metadata
+          const bookData = {
+            isbn: null,
+            title: currentSearchResult.title,
+            author: currentSearchResult.author || null,
+          };
+          // Add optional fields only if they have truthy values
+          // TEMPORARILY DISABLED cover_url to debug 500 error
+          // if (currentSearchResult.publisher) {
+          //   bookData.publisher = currentSearchResult.publisher;
+          // }
+          // if (currentSearchResult.publish_year) {
+          //   bookData.publish_year = parseInt(currentSearchResult.publish_year, 10) || null;
+          // }
+          // if (currentSearchResult.cover_url) {
+          //   bookData.cover_url = currentSearchResult.cover_url;
+          // }
+
+          console.log('Creating book with data:', bookData);
+          const book = await api.createBook(bookData);
+
+          await api.createCopy({
+            book_id: book.id,
+            branch_id: branchId,
+          });
+        } else if (currentISBN) {
+          // From scan or manual ISBN entry - use ISBN lookup
+          await api.createCopy({
+            isbn: currentISBN,
+            branch_id: branchId,
+          });
+        }
 
         showMessage('Book added successfully!', 'success');
         setTimeout(() => {
-          currentISBN = null;
-          currentBookData = null;
-          showScanner();
+          showFlowSelection();
         }, 1500);
       } catch (err) {
+        console.error('Error adding book:', err.message);
         showMessage('Error adding book: ' + err.message);
       }
     });
@@ -303,10 +540,7 @@
 
         showMessage('Book added successfully!', 'success');
         setTimeout(() => {
-          currentISBN = null;
-          document.getElementById('manual-title').value = '';
-          document.getElementById('manual-author').value = '';
-          showScanner();
+          showFlowSelection();
         }, 1500);
       } catch (err) {
         showMessage('Error adding book: ' + err.message);
