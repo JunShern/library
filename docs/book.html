@@ -126,7 +126,11 @@
                         <button class="btn btn-primary btn-sm" data-branch="${(copy.branch?.name || 'Unknown').replace(/"/g, '&quot;')}" data-owner="${(copy.branch?.owner?.name || 'the branch owner').replace(/"/g, '&quot;')}" onclick="showContactModal(this.dataset.branch, this.dataset.owner)">
                           Borrow
                         </button>
-                      `) : ''}
+                      `) : (auth.isBranchOwner() && copy.active_loan_id ? `
+                        <button class="btn btn-secondary btn-sm" onclick="returnBook('${copy.active_loan_id}')">
+                          Return
+                        </button>
+                      ` : '')}
                     </td>
                   </tr>
                 `).join('')}
@@ -148,6 +152,20 @@
 
     function showCheckoutModal(copyId) {
       window.location.href = `branch-loans.html?checkout=${copyId}`;
+    }
+
+    async function returnBook(loanId) {
+      if (!confirm('Mark this book as returned?')) {
+        return;
+      }
+
+      try {
+        await api.returnLoan(loanId);
+        showMessage('Book returned successfully', 'success');
+        loadBook();
+      } catch (err) {
+        showMessage(err.message);
+      }
     }
 
     function showContactModal(branchName, ownerName) {

@@ -124,8 +124,8 @@ async def get_book(book_id: str):
             None
         )
         copy["is_available"] = active_loan is None
-        # Only expose that a loan exists, no details (due date is private)
-        copy["current_loan"] = active_loan is not None
+        # Include loan ID for branch owners/admins to enable Return action
+        copy["active_loan_id"] = active_loan["id"] if active_loan else None
         # Remove full loans array from response
         del copy["loans"]
 
