@@ -124,15 +124,8 @@ async def get_book(book_id: str):
             None
         )
         copy["is_available"] = active_loan is None
-        # Strip borrower_id for privacy - only expose due_date and returned_at
-        if active_loan:
-            copy["current_loan"] = {
-                "id": active_loan["id"],
-                "due_date": active_loan["due_date"],
-                "returned_at": active_loan["returned_at"]
-            }
-        else:
-            copy["current_loan"] = None
+        # Only expose that a loan exists, no details (due date is private)
+        copy["current_loan"] = active_loan is not None
         # Remove full loans array from response
         del copy["loans"]
 

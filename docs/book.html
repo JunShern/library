@@ -117,12 +117,6 @@
                         <span class="badge ${copy.is_available ? 'badge-available' : 'badge-unavailable'}">
                           ${copy.is_available ? 'Available' : 'On Loan'}
                         </span>
-                        ${!copy.is_available && copy.current_loan ? `
-                          <div class="text-muted text-sm">
-                            Due: ${formatDate(copy.current_loan.due_date)}
-                            ${isOverdue(copy.current_loan.due_date) ? '<span class="overdue">(Overdue)</span>' : ''}
-                          </div>
-                        ` : ''}
                       </td>
                       <td>
                         ${copy.is_available ? (auth.isBranchOwner() ? `
