@@ -1636,7 +1636,7 @@ body.has-hero-bg::before {
   left: 0;
   right: 0;
   height: 33vh;
-  background-image: url('../assets/colors.jpg');
+  background-image: url('../assets/clouds.jpg');
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
