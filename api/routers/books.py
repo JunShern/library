@@ -104,9 +104,9 @@ async def lookup_book_by_isbn(isbn: str = Query(..., description="ISBN to look u
 async def get_book(book_id: str):
     """
     Get a single book with all copies and availability.
-    Public endpoint.
+    Public endpoint. Uses admin client to bypass RLS for loan visibility.
     """
-    supabase = get_supabase_client()
+    supabase = get_supabase_admin()
 
     response = supabase.table("books").select(
         "*, copies(*, branch:branches(id, name, owner:profiles(id, name)), loans(id, borrower_id, due_date, returned_at))"
@@ -124,7 +124,17 @@ async def get_book(book_id: str):
             None
         )
         copy["is_available"] = active_loan is None
-        copy["current_loan"] = active_loan
+        # Strip borrower_id for privacy - only expose due_date and returned_at
+        if active_loan:
+            copy["current_loan"] = {
+                "id": active_loan["id"],
+                "due_date": active_loan["due_date"],
+                "returned_at": active_loan["returned_at"]
+            }
+        else:
+            copy["current_loan"] = None
+        # Remove full loans array from response
+        del copy["loans"]
 
     return book
 
