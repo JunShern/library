@@ -138,7 +138,7 @@ async def create_book(book: BookCreate, user: dict = Depends(require_auth)):
     Create a new book record.
     Requires authentication (typically called when adding a copy).
     """
-    supabase = get_supabase_client()
+    supabase = get_supabase_admin()
 
     # Check if ISBN already exists
     if book.isbn:
