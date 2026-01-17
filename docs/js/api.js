@@ -140,12 +140,27 @@ const api = new ApiClient(CONFIG.API_URL);
 
 // Utility functions
 function showMessage(text, type = 'error') {
-  const container = document.getElementById('messages') || document.body;
+  // Get or create toast container
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+
   const msg = document.createElement('div');
-  msg.className = `message message-${type}`;
+  msg.className = `toast toast-${type}`;
   msg.textContent = text;
-  container.prepend(msg);
-  setTimeout(() => msg.remove(), 5000);
+  container.appendChild(msg);
+
+  // Trigger animation
+  requestAnimationFrame(() => msg.classList.add('show'));
+
+  // Auto-dismiss
+  setTimeout(() => {
+    msg.classList.remove('show');
+    setTimeout(() => msg.remove(), 300);
+  }, 4000);
 }
 
 function showLoading(element) {

@@ -517,6 +517,66 @@ select {
   padding-right: 2.5rem;
 }
 
+/* Searchable Select */
+.searchable-select {
+  position: relative;
+}
+
+.searchable-select input[type="text"] {
+  width: 100%;
+}
+
+.searchable-select-dropdown {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 100;
+  box-shadow: var(--shadow-md);
+}
+
+.searchable-select-dropdown.show {
+  display: block;
+}
+
+.searchable-select-item {
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.searchable-select-item:hover {
+  background: var(--bg);
+}
+
+.searchable-select-item.disabled {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.searchable-select-item.disabled:hover {
+  background: transparent;
+}
+
+.searchable-select-item .borrower-name {
+  font-weight: 500;
+  font-size: var(--font-size-sm);
+}
+
+.searchable-select-item .borrower-email {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+
 /* ============================================
    Cards
    ============================================ */
@@ -1147,7 +1207,6 @@ select {
   .loans-table tr {
     display: grid;
     grid-template-columns: 100px 1fr;
-    grid-template-rows: auto auto auto auto;
     gap: 0 var(--space-md);
     margin-bottom: var(--space-md);
     padding-bottom: var(--space-md);
@@ -1160,15 +1219,16 @@ select {
 
   .loans-table td {
     display: block;
-    padding: var(--space-xs) var(--space-md) var(--space-xs) 0;
+    padding: var(--space-xs) 0;
     border: none;
     font-size: var(--font-size-sm);
+    grid-column: 2;
   }
 
-
-  /* Book cell - cover on left */
+  /* Book cell - cover on left, spans all rows */
   .loans-table td:first-child {
-    grid-row: 1 / -1;
+    grid-column: 1;
+    grid-row: 1 / 20;
     padding: var(--space-xs) 0;
   }
 
@@ -1183,11 +1243,6 @@ select {
     border-radius: 6px;
   }
 
-  .loan-book-info {
-    position: absolute;
-    left: -9999px;
-  }
-
   /* Hide desktop book info, show title cell on mobile */
   .loan-book-info {
     display: none;
@@ -1195,7 +1250,13 @@ select {
 
   .loan-title-cell {
     display: block;
-    padding-top: var(--space-md);
+    padding-top: var(--space-xs);
+  }
+
+  .loans-table td[data-label="Borrower"]::before {
+    content: "Borrower: ";
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
   }
 
   .loans-table td[data-label="Branch"]::before {
@@ -1309,6 +1370,55 @@ select {
   background: #eff6ff;
   color: #1e40af;
   border: 1px solid #bfdbfe;
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+#toast-container {
+  position: fixed;
+  bottom: var(--space-lg);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  pointer-events: none;
+}
+
+.toast {
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-md);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: auto;
+  text-align: center;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.toast-error {
+  background: var(--danger);
+  color: white;
+}
+
+.toast-success {
+  background: var(--success);
+  color: white;
+}
+
+.toast-info {
+  background: var(--primary);
+  color: white;
 }
 
 /* ============================================

@@ -138,3 +138,88 @@ async function handleSignOut() {
     showMessage(err.message);
   }
 }
+
+/**
+ * Show a confirmation modal dialog
+ * @param {Object} options
+ * @param {string} options.title - Modal title
+ * @param {string} options.message - Modal message
+ * @param {string} options.confirmText - Confirm button text (default: 'Confirm')
+ * @param {string} options.cancelText - Cancel button text (default: 'Cancel')
+ * @param {string} options.confirmClass - Confirm button class (default: 'btn-primary')
+ * @returns {Promise<boolean>} - Resolves to true if confirmed, false if cancelled
+ */
+function showConfirmModal({ title, message, confirmText = 'Confirm', cancelText = 'Cancel', confirmClass = 'btn-primary' }) {
+  return new Promise((resolve) => {
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('confirm-modal');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'confirm-modal';
+      modal.className = 'modal-overlay hidden';
+      modal.innerHTML = `
+        <div class="card" style="width: 400px; max-width: 90%;">
+          <div class="card-body">
+            <h3 id="confirm-modal-title"></h3>
+            <p id="confirm-modal-message" class="mb-2"></p>
+            <div class="mt-3" style="display: flex; gap: var(--space-sm); justify-content: flex-end;">
+              <button id="confirm-modal-cancel" class="btn btn-secondary"></button>
+              <button id="confirm-modal-confirm" class="btn"></button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      // Close on backdrop click
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          hideConfirmModal();
+          resolve(false);
+        }
+      });
+    }
+
+    // Set content
+    document.getElementById('confirm-modal-title').textContent = title;
+    document.getElementById('confirm-modal-message').textContent = message;
+    document.getElementById('confirm-modal-cancel').textContent = cancelText;
+    const confirmBtn = document.getElementById('confirm-modal-confirm');
+    confirmBtn.textContent = confirmText;
+    confirmBtn.className = `btn ${confirmClass}`;
+
+    // Set up handlers
+    const handleConfirm = () => {
+      cleanup();
+      hideConfirmModal();
+      resolve(true);
+    };
+
+    const handleCancel = () => {
+      cleanup();
+      hideConfirmModal();
+      resolve(false);
+    };
+
+    const cleanup = () => {
+      document.getElementById('confirm-modal-confirm').removeEventListener('click', handleConfirm);
+      document.getElementById('confirm-modal-cancel').removeEventListener('click', handleCancel);
+    };
+
+    document.getElementById('confirm-modal-confirm').addEventListener('click', handleConfirm);
+    document.getElementById('confirm-modal-cancel').addEventListener('click', handleCancel);
+
+    // Show modal
+    modal.classList.remove('hidden');
+  });
+}
+
+/**
+ * Hide the confirmation modal
+ */
+function hideConfirmModal() {
+  const modal = document.getElementById('confirm-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}

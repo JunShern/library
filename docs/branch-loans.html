@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="has-hero-bg has-hero-bg--loans">
   <main class="container">
     <div id="messages"></div>
 
@@ -45,8 +45,12 @@
           <p id="checkout-book-title" class="mb-2"></p>
 
           <div class="form-group">
-            <label for="borrower-select">Borrower</label>
-            <select id="borrower-select" required></select>
+            <label for="borrower-search">Borrower</label>
+            <div class="searchable-select" id="borrower-select-container">
+              <input type="text" id="borrower-search" placeholder="Search for a borrower..." autocomplete="off">
+              <input type="hidden" id="borrower-select" required>
+              <div class="searchable-select-dropdown" id="borrower-dropdown"></div>
+            </div>
           </div>
 
           <div class="form-group">
@@ -85,6 +89,7 @@
 
       await loadBranches();
       await loadBorrowers();
+      initBorrowerSearch();
       await loadLoans();
 
       // Check for checkout param
@@ -121,21 +126,69 @@
       }
     }
 
+    let allBorrowers = [];
+
     async function loadBorrowers() {
       try {
-        const select = document.getElementById('borrower-select');
-        select.innerHTML = '<option value="">Select borrower...</option>';
-
-        const allUsers = await api.getUsers();
-        allUsers.users.forEach(user => {
-          const option = document.createElement('option');
-          option.value = user.id;
-          option.textContent = user.name || user.email;
-          select.appendChild(option);
-        });
+        const response = await api.getUsers();
+        // Deduplicate users by ID
+        const seen = new Set();
+        allBorrowers = response.users.filter(user => {
+          if (seen.has(user.id)) return false;
+          seen.add(user.id);
+          return true;
+        }).map(user => ({
+          id: user.id,
+          name: user.name || user.email,
+          email: user.email
+        }));
       } catch (err) {
         console.log('Could not load users list');
       }
+    }
+
+    function initBorrowerSearch() {
+      const searchInput = document.getElementById('borrower-search');
+      const hiddenInput = document.getElementById('borrower-select');
+      const dropdown = document.getElementById('borrower-dropdown');
+
+      function renderDropdown(filter = '') {
+        const filterLower = filter.toLowerCase();
+        const filtered = allBorrowers.filter(b =>
+          b.name && b.name.toLowerCase().includes(filterLower)
+        );
+
+        if (filtered.length === 0) {
+          dropdown.innerHTML = '<div class="searchable-select-item disabled">No matches found</div>';
+        } else {
+          dropdown.innerHTML = filtered.map(b => `
+            <div class="searchable-select-item" data-id="${b.id}" data-name="${b.name}">${b.name}</div>
+          `).join('');
+        }
+        dropdown.classList.add('show');
+      }
+
+      searchInput.addEventListener('focus', () => renderDropdown(searchInput.value));
+      searchInput.addEventListener('input', (e) => {
+        hiddenInput.value = '';
+        renderDropdown(e.target.value);
+      });
+
+      dropdown.addEventListener('click', (e) => {
+        const item = e.target.closest('.searchable-select-item');
+        if (item && !item.classList.contains('disabled')) {
+          hiddenInput.value = item.dataset.id;
+          searchInput.value = item.dataset.name;
+          dropdown.classList.remove('show');
+        }
+      });
+
+      // Close dropdown when clicking outside
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('#borrower-select-container')) {
+          dropdown.classList.remove('show');
+        }
+      });
     }
 
     async function loadLoans() {
@@ -170,10 +223,11 @@
           <thead>
             <tr>
               <th>Book</th>
+              <th>Title</th>
               <th>Borrower</th>
               <th>Branch</th>
               <th>Borrowed</th>
-              <th>Due</th>
+              <th>Due Date</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -186,20 +240,30 @@
 
               return `
                 <tr>
-                  <td>
-                    <a href="book.html?id=${book.id}">${book.title || 'Unknown'}</a>
+                  <td data-label="Book" class="loan-book-cell">
+                    <a href="book.html?id=${book.id}">
+                      <img src="${book.cover_url || 'assets/placeholder_book.png'}"
+                           alt="${book.title || 'Book cover'}"
+                           class="loan-book-cover"
+                           onerror="this.src='assets/placeholder_book.png'">
+                    </a>
+                    <div class="loan-book-info">
+                      <a href="book.html?id=${book.id}">${book.title || 'Unknown'}</a>
+                      <div class="text-muted">${book.author || ''}</div>
+                    </div>
                   </td>
-                  <td>${borrower.name || 'Unknown'}</td>
-                  <td>${branch.name || 'Unknown'}</td>
-                  <td>${formatDate(loan.borrowed_at)}</td>
-                  <td class="${overdue ? 'overdue' : ''}">
-                    ${formatDate(loan.due_date)}
-                    ${overdue ? ' (Overdue)' : ''}
+                  <td data-label="Title" class="loan-title-cell">
+                    <span class="loan-title">${book.title || 'Unknown'}</span>
+                    <span class="loan-author text-muted">${book.author || ''}</span>
                   </td>
-                  <td>
+                  <td data-label="Borrower">${borrower.name || borrower.email || 'Unknown'}</td>
+                  <td data-label="Branch">${branch.name || 'Unknown'}</td>
+                  <td data-label="Borrowed">${formatDate(loan.borrowed_at)}</td>
+                  <td data-label="Due Date" class="${overdue ? 'overdue' : ''}">${formatDate(loan.due_date)}${overdue ? ' <span class="badge badge-unavailable">Overdue</span>' : ''}</td>
+                  <td data-label="Actions">
                     ${loan.returned_at
-                      ? `<span class="text-muted">Returned ${formatDate(loan.returned_at)}</span>`
-                      : `<button class="btn btn-success btn-sm" onclick="returnLoan('${loan.id}')">Return</button>`
+                      ? `<span class="badge badge-available">Returned ${formatDate(loan.returned_at)}</span>`
+                      : `<button class="btn btn-success btn-sm" data-loan="${loan.id}" data-title="${(book.title || 'this book').replace(/"/g, '&quot;')}" data-branch="${(branch.name || 'Unknown').replace(/"/g, '&quot;')}" onclick="returnLoan(this.dataset.loan, this.dataset.title, this.dataset.branch)">Return</button>`
                     }
                   </td>
                 </tr>
@@ -233,6 +297,11 @@
       document.getElementById('checkout-modal').classList.add('hidden');
       document.getElementById('checkout-modal').style.display = 'none';
       currentCheckoutCopyId = null;
+
+      // Clear borrower search
+      document.getElementById('borrower-search').value = '';
+      document.getElementById('borrower-select').value = '';
+      document.getElementById('borrower-dropdown').classList.remove('show');
 
       const url = new URL(window.location);
       url.searchParams.delete('checkout');
@@ -272,8 +341,15 @@
       }
     });
 
-    async function returnLoan(loanId) {
-      if (!confirm('Mark this book as returned?')) return;
+    async function returnLoan(loanId, bookTitle, branchName) {
+      const confirmed = await showConfirmModal({
+        title: 'Return Book',
+        message: `Marking "${bookTitle}" as returned to the ${branchName} branch. Confirm?`,
+        confirmText: 'Proceed',
+        confirmClass: 'btn-success'
+      });
+
+      if (!confirmed) return;
 
       try {
         await api.returnLoan(loanId);

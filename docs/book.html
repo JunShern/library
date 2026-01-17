@@ -127,7 +127,7 @@
                           Borrow
                         </button>
                       `) : (auth.isBranchOwner() && copy.active_loan_id ? `
-                        <button class="btn btn-secondary btn-sm" onclick="returnBook('${copy.active_loan_id}')">
+                        <button class="btn btn-secondary btn-sm" data-loan="${copy.active_loan_id}" data-title="${(book.title || 'this book').replace(/"/g, '&quot;')}" data-branch="${(copy.branch?.name || 'Unknown').replace(/"/g, '&quot;')}" onclick="returnBook(this.dataset.loan, this.dataset.title, this.dataset.branch)">
                           Return
                         </button>
                       ` : '')}
@@ -154,10 +154,15 @@
       window.location.href = `branch-loans.html?checkout=${copyId}`;
     }
 
-    async function returnBook(loanId) {
-      if (!confirm('Mark this book as returned?')) {
-        return;
-      }
+    async function returnBook(loanId, bookTitle, branchName) {
+      const confirmed = await showConfirmModal({
+        title: 'Return Book',
+        message: `Marking "${bookTitle}" as returned to the ${branchName} branch. Confirm?`,
+        confirmText: 'Proceed',
+        confirmClass: 'btn-success'
+      });
+
+      if (!confirmed) return;
 
       try {
         await api.returnLoan(loanId);
