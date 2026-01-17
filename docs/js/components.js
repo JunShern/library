@@ -37,6 +37,7 @@ function initHeader(options = {}) {
     <div id="mobile-menu" class="mobile-menu" onclick="closeMobileMenu(event)">
       <div class="mobile-menu-content" onclick="event.stopPropagation()">
         <button class="mobile-menu-close" onclick="closeMobileMenu()">&times;</button>
+        <div id="mobile-welcome" class="mobile-welcome"></div>
         <nav>
           <a href="index.html">Discover</a>
           <a href="branches.html">Branches</a>
@@ -87,17 +88,20 @@ function closeMobileMenu(event) {
 function updateNav() {
   const navAuth = document.getElementById('nav-auth');
   const mobileNavAuth = document.getElementById('mobile-nav-auth');
+  const mobileWelcome = document.getElementById('mobile-welcome');
   const navAddBook = document.getElementById('nav-add-book');
   const mobileNavAddBook = document.getElementById('mobile-nav-add-book');
 
   if (auth.isAuthenticated()) {
+    const userName = auth.user?.name || auth.user?.email?.split('@')[0] || 'User';
     navAuth.innerHTML = `
       <div class="user-menu">
         <a href="my-loans.html">My Loans</a>
-        <span class="user-name">${auth.user?.name || auth.user?.email}</span>
+        <span class="user-name">${userName}</span>
         <button class="btn btn-secondary btn-sm" onclick="handleSignOut()">Sign Out</button>
       </div>
     `;
+    mobileWelcome.innerHTML = `<img src="assets/logo_icon.png" alt="" class="welcome-logo"><br><span class="welcome-label">Welcome back,</span><br>${userName}!`;
     mobileNavAuth.innerHTML = `
       <a href="#" onclick="handleSignOut(); return false;">Sign Out</a>
     `;
@@ -112,6 +116,7 @@ function updateNav() {
     }
   } else {
     navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
+    mobileWelcome.innerHTML = '';
     mobileNavAuth.innerHTML = '<a href="login.html">Sign In</a>';
     navAddBook.innerHTML = '';
     mobileNavAddBook.innerHTML = '';

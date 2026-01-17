@@ -286,6 +286,31 @@ nav a.active {
   flex-direction: column;
 }
 
+.mobile-welcome {
+  font-size: var(--font-size-base);
+  font-weight: 400;
+  text-align: center;
+  margin-top: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.mobile-welcome .welcome-logo {
+  display: block;
+  height: 48px;
+  width: auto;
+  margin: 0 auto var(--space-xs);
+}
+
+.mobile-welcome .welcome-label {
+  font-size: var(--font-size-xl);
+}
+
+.mobile-welcome:empty {
+  display: none;
+}
+
 .mobile-menu-footer {
   margin-top: auto;
   padding-top: var(--space-lg);
