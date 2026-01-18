@@ -325,6 +325,17 @@ nav a.active {
   padding: var(--space-sm) 0;
 }
 
+.mobile-sign-out {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+
+.mobile-sign-out svg {
+  opacity: 0.5;
+}
+
 .mobile-menu-close {
   position: absolute;
   top: var(--space-md);
@@ -427,6 +438,18 @@ nav a.active {
   background: var(--bg);
   border-color: var(--text-light);
   color: var(--text);
+}
+
+.btn-outline {
+  background: var(--text);
+  color: white;
+  border: 1px solid var(--text);
+}
+
+.btn-outline:hover {
+  background: var(--primary-dark);
+  border-color: var(--primary-dark);
+  color: white;
 }
 
 .btn-danger {

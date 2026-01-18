@@ -103,7 +103,12 @@ function updateNav() {
     `;
     mobileWelcome.innerHTML = `<img src="assets/logo_icon.png" alt="" class="welcome-logo"><br><span class="welcome-label">Welcome back,</span><br>${userName}!`;
     mobileNavAuth.innerHTML = `
-      <a href="#" onclick="handleSignOut(); return false;">Sign Out</a>
+      <a href="#" class="mobile-sign-out" onclick="handleSignOut(); return false;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15m3 0l3-3m0 0l-3-3m3 3H9" />
+        </svg>
+        Sign Out
+      </a>
     `;
 
     // Show admin links if user is branch owner
@@ -121,7 +126,14 @@ function updateNav() {
   } else {
     navAuth.innerHTML = '<a href="login.html" class="btn btn-primary btn-sm">Sign In</a>';
     mobileWelcome.innerHTML = '';
-    mobileNavAuth.innerHTML = '<a href="login.html">Sign In</a>';
+    mobileNavAuth.innerHTML = `
+      <a href="login.html" class="mobile-sign-out">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5" width="20" height="20">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+        </svg>
+        Sign In
+      </a>
+    `;
     navAddBook.innerHTML = '';
     mobileNavAddBook.innerHTML = '';
   }
