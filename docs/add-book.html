@@ -504,7 +504,7 @@
         if (currentSearchResult) {
           // From search - create book with all available metadata
           const bookData = {
-            isbn: null,
+            isbn: currentSearchResult.isbn || null,
             title: currentSearchResult.title,
             author: currentSearchResult.author || null,
           };
