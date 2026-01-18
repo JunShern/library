@@ -480,18 +480,15 @@
             author: currentSearchResult.author || null,
           };
           // Add optional fields only if they have truthy values
-          // TEMPORARILY DISABLED cover_url to debug 500 error
-          // if (currentSearchResult.publisher) {
-          //   bookData.publisher = currentSearchResult.publisher;
-          // }
-          // if (currentSearchResult.publish_year) {
-          //   bookData.publish_year = parseInt(currentSearchResult.publish_year, 10) || null;
-          // }
-          // if (currentSearchResult.cover_url) {
-          //   bookData.cover_url = currentSearchResult.cover_url;
-          // }
-
-          console.log('Creating book with data:', bookData);
+          if (currentSearchResult.publisher) {
+            bookData.publisher = currentSearchResult.publisher;
+          }
+          if (currentSearchResult.publish_year) {
+            bookData.publish_year = parseInt(currentSearchResult.publish_year, 10) || null;
+          }
+          if (currentSearchResult.cover_url) {
+            bookData.cover_url = currentSearchResult.cover_url;
+          }
           const book = await api.createBook(bookData);
 
           await api.createCopy({
@@ -511,7 +508,6 @@
           showFlowSelection();
         }, 1500);
       } catch (err) {
-        console.error('Error adding book:', err.message);
         showMessage('Error adding book: ' + err.message);
       }
     });
