@@ -1135,6 +1135,14 @@ select {
   border-radius: var(--radius-sm);
 }
 
+.book-description {
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+  margin-top: var(--space-md);
+  max-height: 120px;
+  overflow-y: auto;
+}
+
 /* ============================================
    Flow Selection (Add Book)
    ============================================ */

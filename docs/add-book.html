@@ -112,6 +112,8 @@
           </div>
         </div>
 
+        <p id="preview-description" class="book-description text-muted"></p>
+
         <div class="form-group mt-2">
           <label for="branch-select">Add to Branch</label>
           <select id="branch-select" required></select>
@@ -405,7 +407,7 @@
       }).join('');
     }
 
-    function selectSearchResult(index) {
+    async function selectSearchResult(index) {
       const book = searchResultsCache[index];
       if (!book) return;
 
@@ -418,8 +420,27 @@
         cover_url: book.cover_i
           ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`
           : null,
-        isbn: book.isbn ? book.isbn[0] : null
+        isbn: book.isbn ? book.isbn[0] : null,
+        description: null
       };
+
+      // Fetch work details to get description
+      if (book.key) {
+        try {
+          const workResponse = await fetch(`https://openlibrary.org${book.key}.json`);
+          if (workResponse.ok) {
+            const workData = await workResponse.json();
+            // Description can be a string or an object with a 'value' property
+            if (workData.description) {
+              currentSearchResult.description = typeof workData.description === 'string'
+                ? workData.description
+                : workData.description.value || null;
+            }
+          }
+        } catch (e) {
+          // Ignore errors fetching description - it's optional
+        }
+      }
 
       currentISBN = currentSearchResult.isbn;
       currentBookData = currentSearchResult;
@@ -454,6 +475,14 @@
         data.publish_year,
         data.page_count ? `${data.page_count} pages` : null
       ].filter(Boolean).join(' | ');
+
+      const descEl = document.getElementById('preview-description');
+      if (data.description) {
+        descEl.textContent = data.description;
+        descEl.style.display = 'block';
+      } else {
+        descEl.style.display = 'none';
+      }
     }
 
     function showNotFound(isbn) {
@@ -488,6 +517,9 @@
           }
           if (currentSearchResult.cover_url) {
             bookData.cover_url = currentSearchResult.cover_url;
+          }
+          if (currentSearchResult.description) {
+            bookData.description = currentSearchResult.description;
           }
           const book = await api.createBook(bookData);
 
