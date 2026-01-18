@@ -1681,3 +1681,11 @@ body.has-hero-bg--library::before {
 body.has-hero-bg--loans::before {
   background-image: url('../assets/reading.jpg');
 }
+
+body.has-hero-bg--manage::before {
+  background-image: url('../assets/colors.jpg');
+}
+
+body.has-hero-bg--add-books::before {
+  background-image: url('../assets/construction.jpg');
+}
