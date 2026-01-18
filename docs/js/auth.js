@@ -14,14 +14,29 @@ class Auth {
     this.supabase = createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
 
     // Check for existing session
-    const { data: { session } } = await this.supabase.auth.getSession();
-    if (session) {
-      this.session = session;
-      await this.fetchUser();
+    try {
+      const { data: { session }, error } = await this.supabase.auth.getSession();
+      if (error) {
+        console.warn('Session error, clearing auth state:', error.message);
+        await this.signOut();
+      } else if (session) {
+        this.session = session;
+        await this.fetchUser();
+      }
+    } catch (e) {
+      console.warn('Failed to get session, clearing auth state:', e.message);
+      await this.signOut();
     }
 
     // Listen for auth changes
     this.supabase.auth.onAuthStateChange(async (event, session) => {
+      // Handle token refresh failures
+      if (event === 'TOKEN_REFRESHED' && !session) {
+        console.warn('Token refresh failed, signing out');
+        await this.signOut();
+        return;
+      }
+
       this.session = session;
       if (session) {
         await this.fetchUser();
@@ -86,6 +101,10 @@ class Auth {
     } catch (e) {
       // Ignore network errors etc.
     }
+
+    // Force clear Supabase localStorage in case signOut API failed
+    const storageKey = `sb-${new URL(CONFIG.SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
+    localStorage.removeItem(storageKey);
 
     // Always clear local state and notify UI
     this.user = null;
