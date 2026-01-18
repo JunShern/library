@@ -442,6 +442,27 @@
         }
       }
 
+      // Fetch editions to find ISBN matching the displayed cover
+      if (book.key && book.cover_i) {
+        try {
+          const editionsResponse = await fetch(`https://openlibrary.org${book.key}/editions.json?limit=100`);
+          if (editionsResponse.ok) {
+            const editionsData = await editionsResponse.json();
+            // Find edition with matching cover
+            const matchingEdition = editionsData.entries?.find(
+              edition => edition.covers?.includes(book.cover_i)
+            );
+            if (matchingEdition?.isbn_13?.[0]) {
+              currentSearchResult.isbn = matchingEdition.isbn_13[0];
+            } else if (matchingEdition?.isbn_10?.[0]) {
+              currentSearchResult.isbn = matchingEdition.isbn_10[0];
+            }
+          }
+        } catch (e) {
+          // Ignore errors - ISBN is optional
+        }
+      }
+
       currentISBN = currentSearchResult.isbn;
       currentBookData = currentSearchResult;
 
